@@ -123,7 +123,7 @@ var GAS_URL='https://script.google.com/macros/s/AKfycbxec2oCFdaE1hEwCo_GGIyThwih
 var PDV_DEFAULT=10, FREE_FROM=7000, MIN_DELIVERY=2500, DELIVERY=350;
 var catalog=[], qtyMap={}, pickup=false, CODE='', PARTNER='', ORDERS=[], DOCS=[], TERMS=[], FOOT={}, CATSR={}, VIEW='new', openOrder='';
 var LANG='ru';try{LANG=localStorage.getItem('bv_partner_lang')||'ru';}catch(e){}
-var HOLIDAYS=[];var LEAD_DAYS=2;
+var HOLIDAYS=[];var HOLIDAY_RAW=[];var LEAD_DAYS=2;
 try{CODE=localStorage.getItem('bv_partner_code')||'';}catch(e){}
 
 var DOC_T={invoice:'Счёт',delivery_note:'Накладная',terms:'Условия',contract:'Договор',certificate:'Сертификат',offer:'КП',other:'Документ'};
@@ -167,6 +167,8 @@ function isHoliday(d){return HOLIDAYS.indexOf(ymd(d))>=0;}
 function earliestDate(){var d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+LEAD_DAYS);return d;}
 function isBlockedDate(d){if(d<earliestDate())return true;if(isSunday(d))return true;if(isHoliday(d))return true;return false;}
 function nextAvailable(){var d=earliestDate(),g=0;while(isBlockedDate(d)&&g<120){d.setDate(d.getDate()+1);g++;}return d;}
+var HOL_LBL={weekend:{ru:'выходные',sr:'neradni dani'},holiday:{ru:'праздничные выходные',sr:'praznični dani'},maintenance:{ru:'технические работы',sr:'tehnički radovi'}};
+function holRawType(y){for(var i=0;i<HOLIDAY_RAW.length;i++){var h=HOLIDAY_RAW[i];var d=(typeof h==='string')?h:(h&&h.date);if(d===y)return (typeof h==='string')?'holiday':((h&&h.type)||'holiday');}return 'holiday';}
 function holidayBannerHtml(){
   if(!HOLIDAYS.length)return '';
   var today=new Date();today.setHours(0,0,0,0);
@@ -175,10 +177,14 @@ function holidayBannerHtml(){
   var ranges=[],cur=[fut[0]];
   for(var i=1;i<fut.length;i++){var p=new Date(fut[i-1]+'T00:00:00'),n=new Date(fut[i]+'T00:00:00');if((n-p)===86400000)cur.push(fut[i]);else{ranges.push(cur);cur=[fut[i]];}}
   ranges.push(cur);var r=ranges[0];
-  function f(y){var d=new Date(y+'T00:00:00');return (''+d.getDate()).padStart(2,'0')+'.'+(''+(d.getMonth()+1)).padStart(2,'0');}
-  var sr=(LANG==='sr'),txt;
-  if(r.length===1)txt=sr?('Obratite pažnju: '+f(r[0])+' je neradni dan. Uzmite u obzir pri planiranju porudžbina.'):('Обратите внимание: '+f(r[0])+' — нерабочий день. Учитывайте это при планировании заказов.');
-  else txt=sr?('Obratite pažnju: od '+f(r[0])+' do '+f(r[r.length-1])+' imamo neradne dane. Uzmite u obzir pri planiranju porudžbina.'):('Обратите внимание: с '+f(r[0])+' по '+f(r[r.length-1])+' у нас нерабочие дни. Учитывайте это при планировании заказов.');
+  var startD=new Date(r[0]+'T00:00:00');
+  var daysLeft=Math.round((startD-today)/86400000);
+  if(daysLeft>10)return '';
+  function f(y){var d=new Date(y+'T00:00:00');return (''+d.getDate()).padStart(2,'0')+'.'+(''+(d.getMonth()+1)).padStart(2,'0')+'.'+d.getFullYear();}
+  var sr=(LANG==='sr'),tp=holRawType(r[0]),tn=(HOL_LBL[tp]?HOL_LBL[tp][sr?'sr':'ru']:(sr?'neradni dani':'нерабочие дни'));
+  var txt;
+  if(r.length===1)txt=sr?('Obratite pažnju: '+f(r[0])+' — '+tn+'. Uzmite u obzir pri planiranju porudžbina.'):('Обратите внимание: '+f(r[0])+' — '+tn+'. Учитывайте это при планировании заказов.');
+  else txt=sr?('Obratite pažnju: od '+f(r[0])+' do '+f(r[r.length-1])+' — '+tn+'. Uzmite u obzir pri planiranju porudžbina.'):('Обратите внимание: с '+f(r[0])+' по '+f(r[r.length-1])+' — '+tn+'. Учитывайте это при планировании заказов.');
   return '<div class="holiday-banner">📅 '+txt+'</div>';
 }
 function pdvName(){return 'PDV';}
@@ -522,7 +528,7 @@ function applyAuth(j,code){
   var data=j.data||{};catalog=(data.catalog||[]).filter(function(it){return it&&it.name&&it.retail!=null;});
   ORDERS=j.orders||[];DOCS=j.documents||[];
   TERMS=Array.isArray(data.terms)?data.terms:[];FOOT=data.foot||{};CATSR=data.catNamesSr||{};
-  if(data.settings){var s=data.settings;if(s.free!=null)FREE_FROM=Number(s.free)||FREE_FROM;if(s.minDeliv!=null)MIN_DELIVERY=Number(s.minDeliv)||MIN_DELIVERY;if(s.deliv!=null)DELIVERY=Number(s.deliv)||DELIVERY;if(Array.isArray(s.holidays))HOLIDAYS=s.holidays;if(s.leadDays!=null)LEAD_DAYS=Number(s.leadDays)||LEAD_DAYS;}
+  if(data.settings){var s=data.settings;if(s.free!=null)FREE_FROM=Number(s.free)||FREE_FROM;if(s.minDeliv!=null)MIN_DELIVERY=Number(s.minDeliv)||MIN_DELIVERY;if(s.deliv!=null)DELIVERY=Number(s.deliv)||DELIVERY;if(Array.isArray(s.holidays)){HOLIDAY_RAW=s.holidays;HOLIDAYS=s.holidays.map(function(h){return typeof h==='string'?h:(h&&h.date)||'';}).filter(Boolean);}if(s.leadDays!=null)LEAD_DAYS=Number(s.leadDays)||LEAD_DAYS;}
   setView('new');
 }
 function doAuth(){
