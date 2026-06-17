@@ -122,6 +122,7 @@ var GAS_URL='https://script.google.com/macros/s/AKfycbxec2oCFdaE1hEwCo_GGIyThwih
 var PDV_DEFAULT=10, FREE_FROM=7000, MIN_DELIVERY=2500, DELIVERY=350;
 var catalog=[], qtyMap={}, pickup=false, CODE='', PARTNER='', ORDERS=[], DOCS=[], TERMS=[], FOOT={}, CATSR={}, VIEW='new', openOrder='';
 var LANG='ru';try{LANG=localStorage.getItem('bv_partner_lang')||'ru';}catch(e){}
+var HOLIDAYS=[];var LEAD_DAYS=2;
 try{CODE=localStorage.getItem('bv_partner_code')||'';}catch(e){}
 
 var DOC_T={invoice:'Счёт',delivery_note:'Накладная',terms:'Условия',contract:'Договор',certificate:'Сертификат',offer:'КП',other:'Документ'};
@@ -130,7 +131,7 @@ var TL={
   ru:{neworder:'Новый заказ',myorders:'Мои заказы',docs:'Документы',info:'Условия',pricetab:'Прайс',logout:'выйти',
     submit:'Отправить заказ',pick:'выберите позиции',pos:'поз.',repeat:'Повторить',details:'Подробнее',collapse:'Свернуть',
     deliv:'Данные доставки',contact:'Контактное лицо',phone:'Телефон',ddate:'Дата доставки',
-    pickup:'Самовывоз из пекарни (без доставки)',comment:'Комментарий',
+    pickup:'Самовывоз из пекарни (без доставки)',comment:'Комментарий',dtime:'Время доставки',address:'Адрес заведения',earliest:'Ближайшая доступная дата',needdate:'Укажите дату доставки.',needaddr:'Укажите адрес заведения для доставки.',blocked:'На эту дату заказ разместить нельзя.',nearest:'Ближайшая доступная дата',sundayoff:'По воскресеньям отгрузки нет.',cutoff:'Заказ принимается не позднее чем за 2 дня до доставки (производственный цикл).',
     statusHist:'История статуса',bakeryComments:'Комментарии пекарни',yourComment:'Ваш комментарий',
     noOrders:'У вас пока нет заказов.',noDocs:'Документы появятся здесь после загрузки пекарней.',
     open:'Открыть / скачать',terms:'Условия сотрудничества',contacts:'Контакты',price:'Актуальный прайс',
@@ -138,7 +139,7 @@ var TL={
   sr:{neworder:'Nova porudžbina',myorders:'Moje porudžbine',docs:'Dokumenti',info:'Uslovi',pricetab:'Cenovnik',logout:'izlaz',
     submit:'Pošalji porudžbinu',pick:'izaberite stavke',pos:'stavki',repeat:'Ponovi',details:'Detaljnije',collapse:'Sažmi',
     deliv:'Podaci o dostavi',contact:'Kontakt osoba',phone:'Telefon',ddate:'Datum isporuke',
-    pickup:'Preuzimanje u pekari (bez dostave)',comment:'Komentar',
+    pickup:'Preuzimanje u pekari (bez dostave)',comment:'Komentar',dtime:'Vreme isporuke',address:'Adresa objekta',earliest:'Najraniji dostupan datum',needdate:'Navedite datum isporuke.',needaddr:'Navedite adresu objekta za dostavu.',blocked:'Za ovaj datum nije moguće napraviti porudžbinu.',nearest:'Najraniji dostupan datum',sundayoff:'Nedeljom se ne isporučuje.',cutoff:'Porudžbina se prima najkasnije 2 dana pre isporuke (proizvodni ciklus).',
     statusHist:'Istorija statusa',bakeryComments:'Komentari pekare',yourComment:'Vaš komentar',
     noOrders:'Još nemate porudžbine.',noDocs:'Dokumenti će se pojaviti ovde nakon što ih pekara doda.',
     open:'Otvori / preuzmi',terms:'Uslovi saradnje',contacts:'Kontakt',price:'Aktuelni cenovnik',
@@ -158,6 +159,13 @@ function itemPdv(it){var v=(it&&it.pdv!=null&&it.pdv!=='')?Number(it.pdv):PDV_DE
 function itemUnit(it){return (it&&it.uom)?it.uom:'шт';}
 function uName(u){if(LANG!=='sr')return u||'шт';return ({'шт':'kom','кг':'kg','г':'g','мл':'ml','л':'l'})[u]||u;}
 function cur(){return LANG==='sr'?'din.':'дин.';}
+function ymd(d){var m=(''+(d.getMonth()+1)).padStart(2,'0'),dd=(''+d.getDate()).padStart(2,'0');return d.getFullYear()+'-'+m+'-'+dd;}
+function fmtDate(d){return (''+d.getDate()).padStart(2,'0')+'.'+(''+(d.getMonth()+1)).padStart(2,'0')+'.'+d.getFullYear();}
+function isSunday(d){return d.getDay()===0;}
+function isHoliday(d){return HOLIDAYS.indexOf(ymd(d))>=0;}
+function earliestDate(){var d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+LEAD_DAYS);return d;}
+function isBlockedDate(d){if(d<earliestDate())return true;if(isSunday(d))return true;if(isHoliday(d))return true;return false;}
+function nextAvailable(){var d=earliestDate(),g=0;while(isBlockedDate(d)&&g<120){d.setDate(d.getDate()+1);g++;}return d;}
 function pdvName(){return 'PDV';}
 function nextTierHint(it,q){
   if(!it||!it.tiers||!it.tiers.length||q<=0)return '';
@@ -232,18 +240,24 @@ function renderNew(){
   h+='<div class="sec-title">'+L('deliv')+'</div><div class="form-card">'+
      '<div class="field"><label class="lbl">'+L('contact')+' <span class="req">*</span></label><input class="inp" id="fContact"></div>'+
      '<div class="field"><label class="lbl">'+L('phone')+' <span class="req">*</span></label><input class="inp" id="fPhone" placeholder="+381 …" inputmode="tel"></div>'+
-     '<div class="field"><label class="lbl">'+L('ddate')+'</label><input class="inp" id="fDate" type="date"><div class="hint">'+L('delivHint')+'</div></div>'+
+     '<div class="field"><label class="lbl">'+L('address')+' <span class="req">*</span></label><input class="inp" id="fAddr" placeholder="'+(LANG==='sr'?'Ulica, broj, grad':'Улица, дом, город')+'"></div>'+
+     '<div style="display:flex;gap:12px;flex-wrap:wrap;">'+
+       '<div class="field" style="flex:1;min-width:150px;"><label class="lbl">'+L('ddate')+' <span class="req">*</span></label><input class="inp" id="fDate" type="date"><div class="hint" id="dateHint"></div></div>'+
+       '<div class="field" style="flex:1;min-width:120px;"><label class="lbl">'+L('dtime')+'</label><input class="inp" id="fTime" type="time"></div>'+
+     '</div>'+
      '<div class="chk" id="fPickup"><span class="box"></span><span>'+L('pickup')+'</span></div>'+
      '<div class="field" style="margin-top:13px;"><label class="lbl">'+L('comment')+'</label><textarea class="inp" id="fComment"></textarea></div>'+
      '<div class="hint" style="margin-top:8px;">'+(LANG==='sr'?'Podaci se pamte iz prethodne porudžbine — proverite i po potrebi izmenite.':'Данные подставляются из прошлого заказа — проверьте и при необходимости измените.')+'</div>'+
      '</div>';
   c.innerHTML=h;bindNav();bindRows();
-  var d=new Date();d.setDate(d.getDate()+2);document.getElementById('fDate').min=d.toISOString().slice(0,10);
+  var na=nextAvailable();document.getElementById('fDate').min=ymd(na);
+  document.getElementById('dateHint').textContent=L('earliest')+': '+fmtDate(na)+'. '+L('cutoff')+' '+L('sundayoff');
   document.getElementById('fPickup').classList.toggle('on',pickup);
   document.getElementById('fPickup').addEventListener('click',function(){pickup=!pickup;this.classList.toggle('on',pickup);renderTotals();});
-  var sc='',sp='';try{sc=localStorage.getItem('bv_p_contact')||'';sp=localStorage.getItem('bv_p_phone')||'';}catch(e){}
+  var sc='',sp='',sa='';try{sc=localStorage.getItem('bv_p_contact')||'';sp=localStorage.getItem('bv_p_phone')||'';sa=localStorage.getItem('bv_p_addr')||'';}catch(e){}
   if(sc)document.getElementById('fContact').value=sc;
   if(sp)document.getElementById('fPhone').value=sp;
+  if(sa)document.getElementById('fAddr').value=sa;
   renderTotals();
 }
 function bindRows(){
@@ -316,7 +330,8 @@ function renderOrders(){
     var open=openOrder===o.order_id;
     h+='<div class="ocard"><div class="top"><span class="onum">'+esc(o.order_id||'')+'</span>'+
        '<span class="st st-'+st+'">'+esc(stName(st))+'</span><span class="odate" style="margin-left:auto;">'+esc(dt)+'</span></div>'+
-       (o.date?'<div class="odate" style="margin-top:6px;">'+L('ddate')+': '+esc(o.date)+'</div>':'')+
+       (o.date?'<div class="odate" style="margin-top:6px;">'+L('ddate')+': '+esc(o.date)+(o.time?', '+esc(o.time):'')+'</div>':'')+
+       (o.address?'<div class="hint" style="margin-top:2px;">'+L('address')+': '+esc(o.address)+'</div>':'')+
        '<div class="oitems">'+esc(items)+'</div>';
     if(open){
       h+='<div style="border-top:1px solid var(--line);margin-top:11px;padding-top:11px;">';
@@ -431,14 +446,23 @@ function sendOrder(){
   var c=compute();if(c.count<1)return;
   var contact=document.getElementById('fContact').value.trim();
   var phone=document.getElementById('fPhone').value.trim();
+  var addr=document.getElementById('fAddr').value.trim();
   if(!contact||!phone){alert(LANG==='sr'?'Popunite kontakt osobu i telefon.':'Заполните контактное лицо и телефон.');return;}
-  try{localStorage.setItem('bv_p_contact',contact);localStorage.setItem('bv_p_phone',phone);}catch(e){}
+  try{localStorage.setItem('bv_p_contact',contact);localStorage.setItem('bv_p_phone',phone);localStorage.setItem('bv_p_addr',addr);}catch(e){}
+  if(!pickup&&!addr){alert(L('needaddr'));return;}
   var date=document.getElementById('fDate').value;
+  var time=document.getElementById('fTime').value;
+  if(!date){alert(L('needdate'));return;}
+  var dd=new Date(date+'T00:00:00');
+  if(isBlockedDate(dd)){var na=nextAvailable();
+    var why=isSunday(dd)?L('sundayoff'):(isHoliday(dd)?(LANG==='sr'?'Taj dan je neradni.':'Этот день нерабочий.'):L('cutoff'));
+    alert(L('blocked')+' '+why+'\n\n'+L('nearest')+': '+fmtDate(na));
+    document.getElementById('fDate').value=ymd(na);return;}
   var comment=document.getElementById('fComment').value.trim();if(pickup)comment=(comment?comment+' · ':'')+'Самовывоз';
   var items=[];catalog.forEach(function(it){var q=Math.max(0,Number(qtyMap[it.id])||0);if(!q)return;
     var disc=discountFor(it,q),unit=it.retail*(1-disc/100);
     items.push({name:it.name,weight:it.weight,qty:q,uom:itemUnit(it),sum:Math.round(unit*q*100)/100});});
-  var order={contact:contact,phone:phone,date:date?new Date(date).toLocaleDateString('ru-RU'):'не указана',
+  var order={contact:contact,phone:phone,address:addr,time:time||'',date:date?new Date(date).toLocaleDateString('ru-RU'):'не указана',
     comment:comment,items:items,total:Math.round(c.grand*100)/100};
   var btn=document.getElementById('sendBtn');btn.disabled=true;btn.textContent=(LANG==='sr'?'Šaljemo…':'Отправляем…');
   fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({order:order,code:CODE})})
@@ -482,7 +506,7 @@ function applyAuth(j,code){
   var data=j.data||{};catalog=(data.catalog||[]).filter(function(it){return it&&it.name&&it.retail!=null;});
   ORDERS=j.orders||[];DOCS=j.documents||[];
   TERMS=Array.isArray(data.terms)?data.terms:[];FOOT=data.foot||{};CATSR=data.catNamesSr||{};
-  if(data.settings){var s=data.settings;if(s.free!=null)FREE_FROM=Number(s.free)||FREE_FROM;if(s.minDeliv!=null)MIN_DELIVERY=Number(s.minDeliv)||MIN_DELIVERY;if(s.deliv!=null)DELIVERY=Number(s.deliv)||DELIVERY;}
+  if(data.settings){var s=data.settings;if(s.free!=null)FREE_FROM=Number(s.free)||FREE_FROM;if(s.minDeliv!=null)MIN_DELIVERY=Number(s.minDeliv)||MIN_DELIVERY;if(s.deliv!=null)DELIVERY=Number(s.deliv)||DELIVERY;if(Array.isArray(s.holidays))HOLIDAYS=s.holidays;if(s.leadDays!=null)LEAD_DAYS=Number(s.leadDays)||LEAD_DAYS;}
   setView('new');
 }
 function doAuth(){

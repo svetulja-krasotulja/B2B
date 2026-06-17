@@ -5246,7 +5246,7 @@ function renderAdminOrders(){
        '<b style="font-size:15px;">'+esc(o.order_id||'')+'</b>'+
        '<span style="font-weight:600;">'+esc(o.partner||'')+'</span>'+
        '<span class="hint" style="margin-left:auto;">'+esc(dt)+'</span></div>'+
-       '<div class="hint" style="margin-top:5px;">'+esc(o.contact||'')+(o.phone?' · '+esc(o.phone):'')+(o.date?' · доставка: '+esc(o.date):'')+'</div>';
+       '<div class="hint" style="margin-top:5px;">'+esc(o.contact||'')+(o.phone?' · '+esc(o.phone):'')+(o.date?' · доставка: '+esc(o.date)+(o.time?' '+esc(o.time):''):'')+(o.address?' · '+esc(o.address):'')+'</div>';
 
     if(editing){
       // ── режим редактирования позиций ──
