@@ -4288,6 +4288,7 @@ function itemUnit(it){return (it&&it.uom)?it.uom:'шт';}
 function uomLoc(u,lang){if(lang!=='sr')return u||'шт';var m={'шт':'kom','кг':'kg','г':'g','мл':'ml','л':'l'};return m[u]||u||'kom';}
 function locDesc(it,lang){return lang==='sr'?(it.descSr||it.desc||''):(it.desc||'');}
 function locSostav(it,lang){return lang==='sr'?(it.sostavSr||it.sostav||''):(it.sostav||'');}
+function visTag(it){return it.b2bHide?' · 🚫 скрыто от партнёров':((Array.isArray(it.b2bOnly)&&it.b2bOnly.length)?' · 👤 только выбранным':'');}
 function minB2B(item){if(!item.tiers||!item.tiers.length)return item.retail;
   var md=0;item.tiers.forEach(function(t){if((Number(t.disc)||0)>md)md=Number(t.disc)||0;});return item.retail*(1-md/100);}
 function itemById(id){for(var i=0;i<catalog.length;i++)if(catalog[i].id===id)return catalog[i];return null;}
@@ -4752,7 +4753,7 @@ function itemCard(it){
   var card=document.createElement('div');card.className='item';if(it._open)card.classList.add('open');
   var head=document.createElement('div');head.className='item-head';
   var thumb=it.photo?'<img class="thumb" src="'+it.photo+'" alt="">':'<div class="thumb">🥖</div>';
-  head.innerHTML='<span class="drag-handle" draggable="true" title="Перетащите в другой раздел">⠿</span>'+thumb+'<div class="nm"><b>'+esc(it.name)+'</b><small>'+esc(it.weight||'')+(it.weight?' · ':'')+esc(it.cat||'')+' · PDV '+itemPdv(it)+'%</small></div>'+
+  head.innerHTML='<span class="drag-handle" draggable="true" title="Перетащите в другой раздел">⠿</span>'+thumb+'<div class="nm"><b>'+esc(it.name)+'</b><small>'+esc(it.weight||'')+(it.weight?' · ':'')+esc(it.cat||'')+' · PDV '+itemPdv(it)+'%'+visTag(it)+'</small></div>'+
     '<div class="price-tag"><div class="retail">'+fmt(it.retail)+' дин.</div><div class="b2b">от '+fmt(minB2B(it))+' дин.</div></div><div class="chev">▾</div>';
   head.addEventListener('click',function(){it._open=!it._open;card.classList.toggle('open');});
   var dh=head.querySelector('.drag-handle');
@@ -4778,6 +4779,33 @@ function itemCard(it){
   cat.innerHTML='<div style="grid-column:span 2;"><label class="lbl">Раздел</label><select class="inp f-cat">'+catOpts+'<option value="__new__">➕ Новый раздел…</option></select></div>'+
     '<div><label class="lbl">PDV</label><select class="inp f-pdv"><option value="10"'+(itemPdv(it)==10?' selected':'')+'>10%</option><option value="20"'+(itemPdv(it)==20?' selected':'')+'>20%</option></select></div>';
   body.appendChild(cat);
+  var vis=document.createElement('div');vis.className='field';
+  var vmode=it.b2bHide?'hide':((Array.isArray(it.b2bOnly)&&it.b2bOnly.length)?'only':'all');
+  vis.innerHTML='<label class="lbl">Видно партнёрам</label>'+
+    '<select class="inp f-vis"><option value="all"'+(vmode==='all'?' selected':'')+'>Всем партнёрам</option>'+
+    '<option value="hide"'+(vmode==='hide'?' selected':'')+'>Скрыто (сезонная / нет в продаже)</option>'+
+    '<option value="only"'+(vmode==='only'?' selected':'')+'>Только выбранным партнёрам</option></select>'+
+    '<div class="f-vis-list" style="margin-top:8px;'+(vmode==='only'?'':'display:none;')+'"></div>';
+  body.appendChild(vis);
+  var visList=vis.querySelector('.f-vis-list');
+  function renderVisList(){
+    if(!partners.length){visList.innerHTML='<div class="hint">Партнёров пока нет — заведите их во вкладке «Партнёры».</div>';return;}
+    it.b2bOnly=Array.isArray(it.b2bOnly)?it.b2bOnly:[];
+    visList.innerHTML=partners.map(function(p){var on=it.b2bOnly.indexOf(p.id)>=0;
+      return '<label style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13.5px;cursor:pointer;"><input type="checkbox" class="f-vis-p" value="'+esc(p.id)+'"'+(on?' checked':'')+'> '+esc(p.name)+'</label>';}).join('');
+    visList.querySelectorAll('.f-vis-p').forEach(function(cb){cb.addEventListener('change',function(){
+      var pid=this.value;it.b2bOnly=it.b2bOnly||[];
+      if(this.checked){if(it.b2bOnly.indexOf(pid)<0)it.b2bOnly.push(pid);}else{it.b2bOnly=it.b2bOnly.filter(function(x){return x!==pid;});}
+      saveCat();});});
+  }
+  renderVisList();
+  vis.querySelector('.f-vis').addEventListener('change',function(){
+    var v=this.value;
+    if(v==='all'){it.b2bHide=false;it.b2bOnly=[];}
+    else if(v==='hide'){it.b2bHide=true;}
+    else{it.b2bHide=false;it.b2bOnly=it.b2bOnly||[];}
+    visList.style.display=(v==='only')?'block':'none';saveCat();renderVisList();updateHead();
+  });
   var desc=document.createElement('div');desc.className='field';
   desc.innerHTML='<label class="lbl">Описание (рус / срб)</label><div class="term-cols">'+
     '<textarea class="inp f-desc" placeholder="Описание для КП (рус)">'+esc(it.desc||'')+'</textarea>'+
@@ -4830,7 +4858,7 @@ function itemCard(it){
   body.appendChild(acts);card.appendChild(body);
   function updateHead(){head.querySelector('.retail').textContent=fmt(it.retail)+' дин.';
     head.querySelector('.b2b').textContent='от '+fmt(minB2B(it))+' дин.';head.querySelector('.nm b').textContent=it.name;
-    head.querySelector('.nm small').textContent=(it.weight||'')+(it.weight?' · ':'')+(it.cat||'')+' · PDV '+itemPdv(it)+'%';}
+    head.querySelector('.nm small').textContent=(it.weight||'')+(it.weight?' · ':'')+(it.cat||'')+' · PDV '+itemPdv(it)+'%'+visTag(it);}
   body.querySelector('.f-name').addEventListener('input',function(){it.name=this.value;saveCat();updateHead();});
   body.querySelector('.f-weight').addEventListener('input',function(){it.weight=this.value;saveCat();updateHead();});
   body.querySelector('.f-retail').addEventListener('input',function(){it.retail=Math.max(0,Number(this.value)||0);saveCat();updateHead();renderTiers();});
@@ -5039,7 +5067,7 @@ document.getElementById('footReset').addEventListener('click',function(){
   if(confirm('Вернуть базовые реквизиты подвала?')){footData=JSON.parse(JSON.stringify(DEFAULT_FOOT));saveFoot();renderFoot();toast('Реквизиты сброшены');}});
 
 /* ---------- заказы (админ-доска) ---------- */
-var adminOrders=[], ordersFilterSt='all', openAdminOrder='';
+var adminOrders=[], ordersFilterSt='all', openAdminOrder='', editingOrder='', editItems=[], pendingStatus={};
 var ORD_ST={submitted:'Новый',confirmed:'Подтверждён',in_production:'В производстве',packed:'Собран',out_for_delivery:'В доставке',delivered:'Доставлен',cancelled:'Отменён'};
 var ORD_FLOW=['submitted','confirmed','in_production','packed','out_for_delivery','delivered','cancelled'];
 function cloudOrders(){
@@ -5055,6 +5083,21 @@ function cloudSetStatus(orderId,status){
 function cloudComment(orderId,text,internal){
   return fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
     body:JSON.stringify({master:MASTER,comment:text,internal:!!internal,order_id:orderId})}).then(function(r){return r.json();});
+}
+function cloudEditOrder(orderId,items,total){
+  return fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify({master:MASTER,editOrder:true,order_id:orderId,items:items,total:total})}).then(function(r){return r.json();});
+}
+function ordFindCat(name,weight){var r=null;catalog.forEach(function(it){if(it.name===name&&(it.weight||'')===(weight||''))r=it;});return r;}
+function ordRecalc(o){
+  var gross=0;
+  editItems.forEach(function(ei){var q=Math.max(0,Number(ei.qty)||0);var it=ordFindCat(ei.name,ei.weight);
+    if(it){var disc=discountFor(it,q);var unit=it.retail*(1-disc/100);ei.uom=itemUnit(it);ei.sum=Math.round(unit*q*100)/100;}
+    else{var u=(ei._unit!=null?ei._unit:0);ei.sum=Math.round(u*q*100)/100;}
+    gross+=ei.sum;});
+  var oldGross=(o.items||[]).reduce(function(s,x){return s+(Number(x.sum)||0);},0);
+  var oldDelivery=Math.max(0,(Number(o.total)||0)-oldGross);
+  return {gross:gross,delivery:oldDelivery,total:Math.round((gross+oldDelivery)*100)/100};
 }
 function renderOrdersFilter(){
   var f=document.getElementById('ordersFilter');if(!f)return;
@@ -5072,23 +5115,46 @@ function renderAdminOrders(){
   if(!list.length){w.innerHTML='<div class="empty">'+(adminOrders.length?'Нет заказов в этом статусе.':'Заказов пока нет.')+'</div>';return;}
   var h='';
   list.forEach(function(o){
-    var st=o.status||'submitted',open=openAdminOrder===o.order_id;
-    var items=(o.items||[]).map(function(it){return '• '+it.name+(it.weight?' ('+it.weight+')':'')+' — '+it.qty+' '+(it.uom||'шт')+(it.sum!=null?' = '+fmt(it.sum)+' дин.':'');}).join('<br>');
+    var st=o.status||'submitted',open=openAdminOrder===o.order_id,editing=editingOrder===o.order_id;
     var dt='';try{dt=new Date(o.created).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(e){}
-    var opts=ORD_FLOW.map(function(s){return '<option value="'+s+'"'+(s===st?' selected':'')+'>'+esc(ORD_ST[s])+'</option>';}).join('');
     h+='<div class="card" style="padding:14px 16px;margin-bottom:11px;" data-id="'+esc(o.order_id)+'">'+
        '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+
        '<b style="font-size:15px;">'+esc(o.order_id||'')+'</b>'+
        '<span style="font-weight:600;">'+esc(o.partner||'')+'</span>'+
        '<span class="hint" style="margin-left:auto;">'+esc(dt)+'</span></div>'+
-       '<div class="hint" style="margin-top:5px;">'+esc(o.contact||'')+(o.phone?' · '+esc(o.phone):'')+(o.date?' · доставка: '+esc(o.date):'')+'</div>'+
-       '<div style="font-size:13px;color:#55544c;margin-top:9px;line-height:1.7;">'+items+'</div>'+
+       '<div class="hint" style="margin-top:5px;">'+esc(o.contact||'')+(o.phone?' · '+esc(o.phone):'')+(o.date?' · доставка: '+esc(o.date):'')+'</div>';
+
+    if(editing){
+      // ── режим редактирования позиций ──
+      var rc=ordRecalc(o);
+      h+='<div style="border-top:1px solid var(--line);margin-top:11px;padding-top:11px;">'+
+         '<div class="lbl" style="margin-bottom:7px;">Редактирование позиций</div>';
+      editItems.forEach(function(ei,idx){
+        h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap;">'+
+           '<span style="flex:1;min-width:150px;font-size:13.5px;">'+esc(ei.name)+(ei.weight?' <span class="hint">('+esc(ei.weight)+')</span>':'')+'</span>'+
+           '<button class="btn btn-line btn-sm e-minus" data-i="'+idx+'">−</button>'+
+           '<input class="inp e-qty" data-i="'+idx+'" type="number" min="0" value="'+(Number(ei.qty)||0)+'" style="width:60px;text-align:center;padding:6px;font-size:13.5px;">'+
+           '<button class="btn btn-line btn-sm e-plus" data-i="'+idx+'">+</button>'+
+           '<span style="width:90px;text-align:right;font-size:13.5px;">'+fmt(ei.sum||0)+' дин.</span>'+
+           '<button class="btn btn-line btn-sm danger e-del" data-i="'+idx+'">✕</button></div>';
+      });
+      var addOpts='<option value="">+ добавить позицию…</option>'+catalog.map(function(it){return '<option value="'+esc(it.id)+'">'+esc(it.name)+(it.weight?' · '+esc(it.weight):'')+'</option>';}).join('');
+      h+='<div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;"><select class="inp e-add" style="flex:1;min-width:160px;font-size:13.5px;">'+addOpts+'</select></div>';
+      h+='<div style="display:flex;justify-content:space-between;margin-top:10px;font-weight:700;">'+
+         '<span>Итого'+(rc.delivery>0?' (вкл. доставку '+fmt(rc.delivery)+')':'')+'</span><span>'+fmt(rc.total)+' дин.</span></div>';
+      h+='<div style="display:flex;gap:8px;margin-top:12px;"><button class="btn btn-primary btn-sm e-save">Сохранить заказ</button>'+
+         '<button class="btn btn-line btn-sm e-cancel">Отмена</button></div></div></div>';
+      return;
+    }
+
+    var items=(o.items||[]).map(function(it){return '• '+it.name+(it.weight?' ('+it.weight+')':'')+' — '+it.qty+' '+(it.uom||'шт')+(it.sum!=null?' = '+fmt(it.sum)+' дин.':'');}).join('<br>');
+    h+='<div style="font-size:13px;color:#55544c;margin-top:9px;line-height:1.7;">'+items+'</div>'+
        (o.comment?'<div class="hint" style="margin-top:8px;">💬 От партнёра: '+esc(o.comment)+'</div>':'');
     if(open){
       h+='<div style="border-top:1px solid var(--line);margin-top:11px;padding-top:11px;">';
       h+='<div class="lbl" style="margin-bottom:5px;">История статуса</div>';
       (o.events||[]).forEach(function(ev){var et='';try{et=new Date(ev.ts).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(e){}
-        h+='<div style="font-size:13px;color:#55544c;padding:2px 0;">'+esc(ORD_ST[ev.status]||ev.status)+' <span class="hint">· '+esc(et)+'</span></div>';});
+        h+='<div style="font-size:13px;color:#55544c;padding:2px 0;">'+esc(ORD_ST[ev.status]||ev.status)+(ev.note?' ('+esc(ev.note)+')':'')+' <span class="hint">· '+esc(et)+'</span></div>';});
       if((o.comments||[]).length){h+='<div class="lbl" style="margin:10px 0 5px;">Комментарии</div>';
         o.comments.forEach(function(cm){var ct='';try{ct=new Date(cm.ts).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(e){}
           h+='<div style="font-size:13px;padding:3px 0;color:'+(cm.internal?'#9a6b1e':'#2c7a4b')+';">'+(cm.internal?'🔒 внутр.: ':'💬 партнёру: ')+esc(cm.text)+' <span class="hint">· '+esc(ct)+'</span></div>';});}
@@ -5096,25 +5162,62 @@ function renderAdminOrders(){
          '<input class="inp c-text" placeholder="Новый комментарий…" style="flex:1;min-width:160px;font-size:13.5px;">'+
          '<button class="btn btn-line btn-sm c-int">Внутр.</button>'+
          '<button class="btn btn-primary btn-sm c-ext">Партнёру</button></div>';
+      h+='<div style="margin-top:10px;"><button class="btn btn-line btn-sm o-edit">✏️ Редактировать позиции</button></div>';
       h+='</div>';
     }
-    h+='<div style="display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap;">'+
+    // строка статуса: смена по кнопке «Сохранить», а не сразу
+    var cur=(pendingStatus[o.order_id]!=null?pendingStatus[o.order_id]:st);
+    var opts=ORD_FLOW.map(function(s){return '<option value="'+s+'"'+(s===cur?' selected':'')+'>'+esc(ORD_ST[s])+'</option>';}).join('');
+    var changed=(cur!==st);
+    h+='<div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap;">'+
        '<b>'+(o.total!==''&&o.total!=null?fmt(o.total)+' дин.':'')+'</b>'+
        '<button class="btn btn-line btn-sm o-det" style="margin-left:auto;">'+(open?'Свернуть':'Подробнее')+'</button>'+
-       '<select class="inp o-status" style="width:auto;padding:8px 12px;font-size:13.5px;">'+opts+'</select></div></div>';
+       '<select class="inp o-status" style="width:auto;padding:8px 12px;font-size:13.5px;">'+opts+'</select>'+
+       (changed?'<button class="btn btn-primary btn-sm o-save">Сохранить и отправить</button>':'')+'</div></div>';
   });
   w.innerHTML=h;
   w.querySelectorAll('.card[data-id]').forEach(function(card){
-    var id=card.dataset.id,sel=card.querySelector('.o-status');
-    sel.addEventListener('change',function(){var ns=this.value;sel.disabled=true;
+    var id=card.dataset.id;
+    var o=null;adminOrders.forEach(function(x){if(x.order_id===id)o=x;});if(!o)return;
+
+    if(editingOrder===id){
+      card.querySelectorAll('.e-minus').forEach(function(b){b.addEventListener('click',function(){var i=+this.dataset.i;editItems[i].qty=Math.max(0,(Number(editItems[i].qty)||0)-1);renderAdminOrders();});});
+      card.querySelectorAll('.e-plus').forEach(function(b){b.addEventListener('click',function(){var i=+this.dataset.i;editItems[i].qty=(Number(editItems[i].qty)||0)+1;renderAdminOrders();});});
+      card.querySelectorAll('.e-qty').forEach(function(inp){inp.addEventListener('change',function(){var i=+this.dataset.i;editItems[i].qty=Math.max(0,Number(this.value)||0);renderAdminOrders();});});
+      card.querySelectorAll('.e-del').forEach(function(b){b.addEventListener('click',function(){var i=+this.dataset.i;editItems.splice(i,1);renderAdminOrders();});});
+      var addSel=card.querySelector('.e-add');
+      if(addSel)addSel.addEventListener('change',function(){var it=itemById(this.value);if(!it)return;
+        if(editItems.some(function(ei){return ei.name===it.name&&(ei.weight||'')===(it.weight||'');})){toast('Эта позиция уже в заказе');this.value='';return;}
+        editItems.push({name:it.name,weight:it.weight,uom:itemUnit(it),qty:1});renderAdminOrders();});
+      card.querySelector('.e-save').addEventListener('click',function(){
+        var clean=editItems.filter(function(ei){return (Number(ei.qty)||0)>0;});
+        if(!clean.length){toast('В заказе должна остаться хотя бы одна позиция');return;}
+        var rc=ordRecalc(o);var btn=this;btn.disabled=true;btn.textContent='Сохраняем…';
+        cloudEditOrder(id,clean,rc.total).then(function(j){
+          if(j&&j.ok){o.items=clean;o.total=rc.total;o.events=(o.events||[]).concat([{ts:new Date().toISOString(),status:o.status,note:'изменён'}]);
+            editingOrder='';editItems=[];toast('Заказ изменён');renderAdminOrders();}
+          else{toast('Не удалось сохранить');btn.disabled=false;btn.textContent='Сохранить заказ';}
+        }).catch(function(){toast('Ошибка соединения');btn.disabled=false;btn.textContent='Сохранить заказ';});
+      });
+      card.querySelector('.e-cancel').addEventListener('click',function(){editingOrder='';editItems=[];renderAdminOrders();});
+      return;
+    }
+
+    var sel=card.querySelector('.o-status');
+    if(sel)sel.addEventListener('change',function(){pendingStatus[id]=this.value;renderAdminOrders();});
+    var saveBtn=card.querySelector('.o-save');
+    if(saveBtn)saveBtn.addEventListener('click',function(){var ns=pendingStatus[id];if(ns==null)return;saveBtn.disabled=true;saveBtn.textContent='Отправляем…';
       cloudSetStatus(id,ns).then(function(j){
-        if(j&&j.ok){adminOrders.forEach(function(o){if(o.order_id===id){o.status=ns;o.events=o.events||[];o.events.push({ts:new Date().toISOString(),status:ns});}});toast('Статус обновлён: '+ORD_ST[ns]);renderAdminOrders();}
-        else{toast('Не удалось обновить');sel.disabled=false;}
-      }).catch(function(){toast('Ошибка соединения');sel.disabled=false;});});
-    card.querySelector('.o-det').addEventListener('click',function(){openAdminOrder=(openAdminOrder===id?'':id);renderAdminOrders();});
+        if(j&&j.ok){o.status=ns;o.events=(o.events||[]).concat([{ts:new Date().toISOString(),status:ns}]);delete pendingStatus[id];toast('Статус сохранён: '+ORD_ST[ns]);renderAdminOrders();}
+        else{toast('Не удалось обновить');saveBtn.disabled=false;saveBtn.textContent='Сохранить и отправить';}
+      }).catch(function(){toast('Ошибка соединения');saveBtn.disabled=false;saveBtn.textContent='Сохранить и отправить';});});
+    var det=card.querySelector('.o-det');
+    if(det)det.addEventListener('click',function(){openAdminOrder=(openAdminOrder===id?'':id);renderAdminOrders();});
+    var edit=card.querySelector('.o-edit');
+    if(edit)edit.addEventListener('click',function(){editingOrder=id;editItems=(o.items||[]).map(function(x){return {name:x.name,weight:x.weight,uom:x.uom,qty:Number(x.qty)||0,_unit:(x.sum&&x.qty?x.sum/x.qty:0)};});renderAdminOrders();});
     var ci=card.querySelector('.c-int'),ce=card.querySelector('.c-ext'),ct=card.querySelector('.c-text');
     function addC(internal){if(!ct||!ct.value.trim())return;var text=ct.value.trim();ci.disabled=ce.disabled=true;
-      cloudComment(id,text,internal).then(function(j){if(j&&j.ok){adminOrders.forEach(function(o){if(o.order_id===id){o.comments=o.comments||[];o.comments.push({ts:new Date().toISOString(),text:text,internal:internal,author:'admin'});}});toast('Комментарий добавлен');renderAdminOrders();}else{toast('Не удалось');ci.disabled=ce.disabled=false;}}).catch(function(){toast('Ошибка');ci.disabled=ce.disabled=false;});}
+      cloudComment(id,text,internal).then(function(j){if(j&&j.ok){o.comments=(o.comments||[]).concat([{ts:new Date().toISOString(),text:text,internal:internal,author:'admin'}]);toast('Комментарий добавлен');renderAdminOrders();}else{toast('Не удалось');ci.disabled=ce.disabled=false;}}).catch(function(){toast('Ошибка');ci.disabled=ce.disabled=false;});}
     if(ci)ci.addEventListener('click',function(){addC(true);});
     if(ce)ce.addEventListener('click',function(){addC(false);});
   });
