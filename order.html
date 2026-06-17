@@ -41,6 +41,7 @@
   @media(max-width:560px){.pcard{flex-direction:column;}.pcard .ph{width:100%;height:120px;flex:none;}table.ptiers{max-width:none;}}
   .order-summary{background:var(--cream);border:1.5px solid var(--blue);border-radius:14px;padding:6px 16px;}
   .order-divider{border:none;border-top:2px solid var(--line);margin:24px 0 0;}
+  .holiday-banner{background:#FFF6D6;border:1px solid #f0d97a;color:#7a5d12;border-radius:12px;padding:12px 16px;font-size:13.5px;margin:14px 0;line-height:1.5;}
   .cat{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--blue-d);margin:18px 0 8px;}
   .row{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:13px;padding:12px 14px;margin-bottom:9px;}
   .row .info{flex:1;min-width:0;}
@@ -166,6 +167,20 @@ function isHoliday(d){return HOLIDAYS.indexOf(ymd(d))>=0;}
 function earliestDate(){var d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+LEAD_DAYS);return d;}
 function isBlockedDate(d){if(d<earliestDate())return true;if(isSunday(d))return true;if(isHoliday(d))return true;return false;}
 function nextAvailable(){var d=earliestDate(),g=0;while(isBlockedDate(d)&&g<120){d.setDate(d.getDate()+1);g++;}return d;}
+function holidayBannerHtml(){
+  if(!HOLIDAYS.length)return '';
+  var today=new Date();today.setHours(0,0,0,0);
+  var fut=HOLIDAYS.filter(function(y){return new Date(y+'T00:00:00')>=today;}).sort();
+  if(!fut.length)return '';
+  var ranges=[],cur=[fut[0]];
+  for(var i=1;i<fut.length;i++){var p=new Date(fut[i-1]+'T00:00:00'),n=new Date(fut[i]+'T00:00:00');if((n-p)===86400000)cur.push(fut[i]);else{ranges.push(cur);cur=[fut[i]];}}
+  ranges.push(cur);var r=ranges[0];
+  function f(y){var d=new Date(y+'T00:00:00');return (''+d.getDate()).padStart(2,'0')+'.'+(''+(d.getMonth()+1)).padStart(2,'0');}
+  var sr=(LANG==='sr'),txt;
+  if(r.length===1)txt=sr?('Obratite pažnju: '+f(r[0])+' je neradni dan. Uzmite u obzir pri planiranju porudžbina.'):('Обратите внимание: '+f(r[0])+' — нерабочий день. Учитывайте это при планировании заказов.');
+  else txt=sr?('Obratite pažnju: od '+f(r[0])+' do '+f(r[r.length-1])+' imamo neradne dane. Uzmite u obzir pri planiranju porudžbina.'):('Обратите внимание: с '+f(r[0])+' по '+f(r[r.length-1])+' у нас нерабочие дни. Учитывайте это при планировании заказов.');
+  return '<div class="holiday-banner">📅 '+txt+'</div>';
+}
 function pdvName(){return 'PDV';}
 function nextTierHint(it,q){
   if(!it||!it.tiers||!it.tiers.length||q<=0)return '';
@@ -224,6 +239,7 @@ function renderNew(){
   if(!catalog.length){c.innerHTML=navHtml('new')+'<div class="empty">Прайс пока не заполнен. Свяжитесь с пекарней.</div>';bindNav();document.getElementById('bar').style.display='none';return;}
   var h=navHtml('new');
   h+='<div class="note">'+(LANG==='sr'?'Izaberite stavke i količinu, navedite datum isporuke — dole će se prikazati ukupan iznos. Cene su sa PDV; popust po količini se računa automatski. Dostava po Beogradu 350 din. (besplatno od 7000 din. bez PDV), ispod 2500 din. — samo preuzimanje. Porudžbina najkasnije 48h pre isporuke, nedeljom se ne isporučuje.':'Выберите позиции и количество, укажите дату доставки — внизу появится итог. Цены с учётом PDV; скидка по объёму считается автоматически. Доставка по Белграду 350 дин. (бесплатно от 7000 дин. без PDV), менее 2500 дин. — только самовывоз. Заказ не позднее 48 ч до поставки, по воскресеньям отгрузки нет.')+'</div>';
+  h+=holidayBannerHtml();
   catList().forEach(function(cat){
     h+='<div class="cat">'+esc(catName(cat))+'</div>';
     catalog.filter(function(it){return (it.cat||'Без категории')===cat;}).forEach(function(it){
