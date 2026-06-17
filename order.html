@@ -141,6 +141,7 @@ function itemPdv(it){var v=(it&&it.pdv!=null&&it.pdv!=='')?Number(it.pdv):PDV_DE
 function itemUnit(it){return (it&&it.uom)?it.uom:'шт';}
 function discountFor(it,qty){if(!it||!it.tiers||!it.tiers.length)return 0;var d=0,best=-1;
   it.tiers.forEach(function(t){if(qty>=t.min&&t.min>best){best=t.min;d=Number(t.disc)||0;}});return d;}
+function minB2BLocal(it){if(!it||!it.tiers||!it.tiers.length)return it.retail;var md=0;it.tiers.forEach(function(t){var d=Number(t.disc)||0;if(d>md)md=d;});return it.retail*(1-md/100);}
 function deliveryInfo(net){if(pickup)return {cost:0,mode:'pickup'};
   if(net<MIN_DELIVERY)return {cost:0,mode:'need'};
   if(net>=FREE_FROM)return {cost:0,mode:'free'};
@@ -179,11 +180,11 @@ function logout(){try{localStorage.removeItem('bv_partner_code');}catch(e){}CODE
 
 /* ---------- новый заказ ---------- */
 function renderNew(){
-  document.getElementById('hTitle').textContent='Новый заказ';
+  document.getElementById('hTitle').textContent=L('neworder');
   var c=document.getElementById('content');
   if(!catalog.length){c.innerHTML=navHtml('new')+'<div class="empty">Прайс пока не заполнен. Свяжитесь с пекарней.</div>';bindNav();document.getElementById('bar').style.display='none';return;}
   var h=navHtml('new');
-  h+='<div class="note">Выберите позиции и количество, укажите дату доставки — внизу появится итог. Цены с учётом PDV; скидка по объёму считается автоматически. Доставка по Белграду 350 дин. (бесплатно от 7000 дин. без PDV), менее 2500 дин. — только самовывоз. Заказ не позднее 48 ч до поставки, по воскресеньям отгрузки нет.</div>';
+  h+='<div class="note">'+(LANG==='sr'?'Izaberite stavke i količinu, navedite datum isporuke — dole će se prikazati ukupan iznos. Cene su sa PDV; popust po količini se računa automatski. Dostava po Beogradu 350 din. (besplatno od 7000 din. bez PDV), ispod 2500 din. — samo preuzimanje. Porudžbina najkasnije 48h pre isporuke, nedeljom se ne isporučuje.':'Выберите позиции и количество, укажите дату доставки — внизу появится итог. Цены с учётом PDV; скидка по объёму считается автоматически. Доставка по Белграду 350 дин. (бесплатно от 7000 дин. без PDV), менее 2500 дин. — только самовывоз. Заказ не позднее 48 ч до поставки, по воскресеньям отгрузки нет.')+'</div>';
   catList().forEach(function(cat){
     h+='<div class="cat">'+esc(catName(cat))+'</div>';
     catalog.filter(function(it){return (it.cat||'Без категории')===cat;}).forEach(function(it){
@@ -250,7 +251,7 @@ function renderTotals(){
 
 /* ---------- мои заказы ---------- */
 function renderOrders(){
-  document.getElementById('hTitle').textContent='Мои заказы';
+  document.getElementById('hTitle').textContent=L('myorders');
   document.getElementById('bar').style.display='none';
   var c=document.getElementById('content');var h=navHtml('orders');
   if(!ORDERS.length){h+='<div class="empty">'+L('noOrders')+'</div>';c.innerHTML=h;bindNav();return;}
@@ -309,6 +310,22 @@ function renderTerms(){
      (FOOT.email?'✉ <a href="mailto:'+esc(FOOT.email)+'" style="color:var(--blue-d);">'+esc(FOOT.email)+'</a><br>':'')+
      (FOOT.phone?'☎ <a href="tel:'+esc(FOOT.phone.replace(/\s/g,''))+'" style="color:var(--blue-d);">'+esc(FOOT.phone)+'</a><br>':'')+
      (owner?'<span class="hint">'+esc(owner)+'</span>':'')+'</div></div>';
+  // актуальный прайс (справочник)
+  h+='<div class="sec-title">'+L('price')+'</div>';
+  if(catalog.length){
+    var pg={},po=[];
+    catalog.forEach(function(it){var cc=it.cat||'';if(!pg[cc]){pg[cc]=[];po.push(cc);}pg[cc].push(it);});
+    po.forEach(function(cc){
+      if(cc)h+='<div class="cat">'+esc(catName(cc))+'</div>';
+      pg[cc].forEach(function(it){
+        var u=itemUnit(it),mb=minB2BLocal(it);
+        h+='<div class="row" style="margin-bottom:7px;"><div class="info">'+
+           '<div class="nm">'+esc(it.name)+(it.weight?'<span class="w">'+esc(it.weight)+'</span>':'')+'</div>'+
+           (mb<it.retail?'<div class="pr"><span class="hint">'+(LANG==='sr'?'po količini od':'по объёму от')+' '+fmt(mb)+' дин./'+esc(u)+'</span></div>':'')+
+           '</div><div style="text-align:right;font-weight:600;font-size:14px;white-space:nowrap;">'+fmt(it.retail)+' дин./'+esc(u)+'</div></div>';
+      });
+    });
+  }else h+='<div class="empty">—</div>';
   c.innerHTML=h;bindNav();
 }
 function renderDocs(){
@@ -371,7 +388,7 @@ document.getElementById('sendBtn').addEventListener('click',sendOrder);
 
 /* ---------- вход по коду ---------- */
 function showLogin(err){
-  document.getElementById('hTitle').textContent='Кабинет партнёра';
+  document.getElementById('hTitle').textContent=(LANG==='sr'?'Kabinet partnera':'Кабинет партнёра');
   document.getElementById('content').innerHTML=
     '<div class="form-card" style="max-width:420px;margin:28px auto;">'+
     '<div class="sec-title" style="margin-top:0;">Вход для партнёров</div>'+
