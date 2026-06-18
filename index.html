@@ -316,9 +316,38 @@
   .cal-day.past{color:#cfccc0;cursor:not-allowed;background:#fafaf7;}
   .cal-day.hol{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:700;}
   .cal-day.today{box-shadow:inset 0 0 0 2px var(--yellow);}
+  .cg-h{font-family:'Instrument Serif',serif;font-style:italic;font-size:21px;margin:22px 0 8px;color:#1D1D1B;}
+  .cg-p{font-size:14.5px;line-height:1.6;margin:0 0 12px;color:#2a2a28;}
+  .cg-note{background:#FFF7DA;border:1px solid #f0e3a8;border-radius:11px;padding:11px 14px;font-size:14px;line-height:1.55;margin:0 0 14px;}
+  .cg-tablewrap{overflow-x:auto;margin:0 0 16px;}
+  .cg-table{border-collapse:collapse;width:100%;font-size:13.5px;}
+  .cg-table th{background:#47A2DA;color:#fff;text-align:left;padding:8px 10px;font-weight:600;}
+  .cg-table td{border:1px solid var(--line);padding:8px 10px;vertical-align:top;}
+  .cg-table tr:nth-child(even) td{background:#faf9f3;}
+  .care-block{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:#fff;}
+  .care-bhead{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
+  .care-btype{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.04em;}
+  .care-tedit{border-collapse:collapse;width:100%;}
+  .care-tedit th,.care-tedit td{border:1px solid var(--line);padding:1px;vertical-align:top;}
+  .ct-cell{width:100%;min-width:90px;border:none;resize:vertical;font-family:inherit;font-size:13px;padding:5px;background:transparent;box-sizing:border-box;}
+  .care-tedit th .ct-cell{font-weight:700;}
+  .care-tbtns{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;}
+  .ct-actions{width:30px;text-align:center;}
+  .care-preview{border:1px dashed var(--line);border-radius:12px;padding:14px 16px;background:#fff;}
 </style>
 </head>
 <body>
+<div id="bvLock" style="position:fixed;inset:0;z-index:99999;background:#F4F3E9;display:flex;align-items:center;justify-content:center;font-family:'Wix Madefor Text',sans-serif;">
+  <div style="width:300px;max-width:88vw;background:#fff;border:1px solid #e6e4d8;border-radius:16px;padding:26px 22px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.08);">
+    <div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:26px;margin-bottom:4px;">BreadVenture</div>
+    <div id="bvLockMsg" style="font-size:13px;color:#8a8980;margin-bottom:16px;">Введите PIN для входа</div>
+    <input id="bvLockPin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN" style="width:100%;border:1px solid #e6e4d8;border-radius:11px;padding:12px;font-size:20px;text-align:center;letter-spacing:.25em;font-family:inherit;box-sizing:border-box;">
+    <div id="bvLockErr" style="color:#d9534f;font-size:12.5px;min-height:16px;margin:8px 0 4px;"></div>
+    <label style="display:flex;align-items:center;justify-content:center;gap:7px;font-size:12.5px;color:#8a8980;margin-bottom:14px;cursor:pointer;"><input type="checkbox" id="bvLockTrust"> Не спрашивать 30 дней на этом устройстве</label>
+    <button id="bvLockBtn" style="width:100%;border:none;border-radius:12px;padding:13px;background:#47A2DA;color:#fff;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;">Войти</button>
+    <div id="bvLockForgot" style="font-size:12px;color:#2f87bd;margin-top:14px;cursor:pointer;">Забыли PIN?</div>
+  </div>
+</div>
 <div class="wrap">
 
   <header>
@@ -3935,6 +3964,7 @@
     <button class="tab" data-tab="calendar">Календарь</button>
     <button class="tab" data-tab="subs">Регулярные</button>
     <button class="tab" data-tab="partners">Партнёры</button>
+    <button class="tab" data-tab="care">Хранение</button>
   </nav>
 
   <!-- OFFER -->
@@ -4183,6 +4213,41 @@
     </div>
   </section>
 
+  <section class="panel" id="panel-care">
+    <div class="card">
+      <div class="cat-title" style="margin-top:0;">Хранение и рекомендации по использованию</div>
+      <p class="hint" style="margin-bottom:12px;">Этот раздел партнёры видят в своём кабинете (только чтение). Заполняйте на двух языках — партнёр увидит на своём. Структура (блоки, строки/столбцы таблиц) общая для RU и SR, переводится только текст.</p>
+      <div class="seg" id="careLangSeg" style="margin-bottom:14px;">
+        <button class="seg-b active" data-lang="ru">Русский</button>
+        <button class="seg-b" data-lang="sr">Srpski</button>
+      </div>
+      <div id="careEditor"></div>
+      <div class="actions" style="margin-top:12px;flex-wrap:wrap;gap:8px;">
+        <button class="btn btn-line btn-sm" id="careAddH">+ Заголовок</button>
+        <button class="btn btn-line btn-sm" id="careAddP">+ Текст</button>
+        <button class="btn btn-line btn-sm" id="careAddNote">+ Заметка</button>
+        <button class="btn btn-line btn-sm" id="careAddTable">+ Таблица</button>
+      </div>
+      <div class="actions" style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px;align-items:center;gap:12px;">
+        <button class="btn btn-primary btn-sm" id="careSave">Сохранить</button>
+        <span class="hint" id="careUpdated"></span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cat-title" style="margin-top:0;">Выгрузить в PDF</div>
+      <p class="hint" style="margin-bottom:10px;">Откроется страница для печати — в диалоге выберите «Сохранить как PDF». Можно общий документ или под конкретного партнёра, на нужном языке.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+        <div class="field" style="flex:1;min-width:180px;margin:0;"><label class="lbl">Для кого</label><select class="inp" id="careDocPartner"></select></div>
+        <div class="field" style="min-width:130px;margin:0;"><label class="lbl">Язык</label><select class="inp" id="careDocLang"><option value="ru">Русский</option><option value="sr">Srpski</option></select></div>
+        <button class="btn btn-primary btn-sm" id="careDocBtn" style="margin-bottom:1px;">Открыть PDF</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cat-title" style="margin-top:0;">Предпросмотр (как видит партнёр)</div>
+      <div id="carePreview" class="care-preview"></div>
+    </div>
+  </section>
+
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -4279,6 +4344,7 @@ function DC(){return [
 
 var catalog=[], terms=[], offerLines=[], priceHistory=[], kpArchive=[], partners=[], catNamesSr={}, partnerPrefs={}, holidays=[], lastKP=null, selectedCats={};
 var profilesAdmin={}, pointsAdmin=[], announceData={}, openPartnerId='';
+var storageData=null, storeLang='ru';
 
 /* ---- облако (Google Apps Script + Таблица) ---- */
 var K_GAS='bv_b2b_gas_url', K_MK='bv_b2b_master';
@@ -4332,6 +4398,7 @@ function applyCloudData(data){
   if(data.profiles&&typeof data.profiles==='object')profilesAdmin=data.profiles;
   if(Array.isArray(data.points))pointsAdmin=data.points;
   if(data.announce&&typeof data.announce==='object')announceData=data.announce;
+  if(data.storage&&typeof data.storage==='object')storageData=data.storage;
   if(data.foot){for(var fk in DEFAULT_FOOT)if(data.foot[fk]!=null)footData[fk]=data.foot[fk];}
 }
 function rerenderAll(){renderCatalog();renderTerms();renderVersions();renderKPArchive();renderFoot();renderPartners();refreshOfferRefs();}
@@ -4429,6 +4496,7 @@ document.querySelectorAll('.tab').forEach(function(tab){
     tab.classList.add('active');document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
     if(tab.dataset.tab==='price')renderCatalog();
     else if(tab.dataset.tab==='partners')renderPartners();
+    else if(tab.dataset.tab==='care'){renderCareAdmin();fillCareDocPartners();}
     else if(tab.dataset.tab==='calendar'){renderCalendar();initCalSave();}
     else if(tab.dataset.tab==='subs'){loadAdminSubs();var sr=document.getElementById('subsReload');if(sr&&!sr._b){sr._b=1;sr.addEventListener('click',loadAdminSubs);}}
   });
@@ -5702,6 +5770,250 @@ var _da=document.getElementById('docAddBtn');if(_da)_da.addEventListener('click'
 document.querySelector('.tab[data-tab="partners"]').addEventListener('click',function(){fillDocPartners();});
 
 
+/* ---------- хранение и рекомендации (админка) ---------- */
+var DEFAULT_STORAGE={blocks:[
+  {type:'p',t:{
+    ru:'Вся продукция BreadVenture — живая, ремесленная, без консервантов. Срок годности короче, чем у промышленной выпечки, поэтому правильное хранение и подача напрямую определяют качество на витрине партнёра. Условия различаются по типу начинки: изделия с карамелью и крем заморозку не переносят, а холодильное хранение каждого изделия необходимо протестировать в условиях конкретного заведения.',
+    sr:'Svi proizvodi BreadVenture su živi, zanatski, bez konzervansa. Rok trajanja je kraći nego kod industrijskog peciva, zato pravilno čuvanje i serviranje direktno određuju kvalitet na vitrini partnera. Uslovi se razlikuju po vrsti fila: proizvodi sa karamelom i krem ne podnose zamrzavanje, a čuvanje u frižideru za svaki proizvod treba testirati u uslovima konkretnog objekta.'}},
+  {type:'h',t:{ru:'Хранение по категориям',sr:'Čuvanje po kategorijama'}},
+  {type:'table',t:{
+    ru:[
+      ['Категория','Комнатная t°','Холодильник +2…+6 °C','Морозилка −18 °C'],
+      ['Булки и бабки без скоропортящейся начинки\n(Cimet rolnica, Rolnica sa makom, Brioš zemička, Babka sa lešnikom i čokoladom)','2 дня','до 3 дней *','до 1 месяца'],
+      ['С карамельной начинкой\n(Brioš sa karamelom, Babka sa cimetom i slanim karamelom)','1–2 дня','до 3 дней *','не замораживать'],
+      ['Rolnica sa sirom (с сыром)','1 день','3 дня','до 1 месяца'],
+      ['Slani karamel (крем)','—','10 дней','не замораживать'],
+      ['Кексы\n(Lemon Drizzle, Banana Hleb, Čokoladni Kolač — с кремом только холодильник)','3 дня','до 6 дней (в плотной обёртке)','—']
+    ],
+    sr:[
+      ['Kategorija','Sobna t°','Frižider +2…+6 °C','Zamrzivač −18 °C'],
+      ['Peciva i babke bez kvarljivog fila\n(Cimet rolnica, Rolnica sa makom, Brioš zemička, Babka sa lešnikom i čokoladom)','2 dana','do 3 dana *','do 1 mesec'],
+      ['Sa karamel filom\n(Brioš sa karamelom, Babka sa cimetom i slanim karamelom)','1–2 dana','do 3 dana *','ne zamrzavati'],
+      ['Rolnica sa sirom','1 dan','3 dana','do 1 mesec'],
+      ['Slani karamel (krem)','—','10 dana','ne zamrzavati'],
+      ['Kolači\n(Lemon Drizzle, Banana Hleb, Čokoladni Kolač — sa kremom samo frižider)','3 dana','do 6 dana (u čvrstom pakovanju)','—']
+    ]}},
+  {type:'note',t:{
+    ru:'* Холодильное хранение булок и бабок обязательно протестировать в условиях заведения (тип печи, влажность, скорость и равномерность прогрева) перед регулярным использованием.',
+    sr:'* Čuvanje peciva i babki u frižideru obavezno testirati u uslovima objekta (vrsta peći, vlažnost, brzina i ravnomernost zagrevanja) pre redovne upotrebe.'}},
+  {type:'h',t:{ru:'Булки и бабки без скоропортящейся начинки',sr:'Peciva i babke bez kvarljivog fila'}},
+  {type:'p',t:{
+    ru:'Cimet rolnica, Rolnica sa makom, Brioš zemička, Babka sa lešnikom i čokoladom. При комнатной температуре в закрытой упаковке — 2 дня (день получения и следующий), лучшее качество в день получения. В холодильнике в плотной упаковке — до 3 дней, но этот режим обязательно протестировать в условиях вашего заведения. Перед подачей изделие доводится до комнатной температуры, затем прогревается для освежения непосредственно перед выдачей. Повторно операцию (охлаждение → подогрев) изделия не переносят — освежать можно только один раз. Заморозка — до 1 месяца.',
+    sr:'Cimet rolnica, Rolnica sa makom, Brioš zemička, Babka sa lešnikom i čokoladom. Na sobnoj temperaturi u zatvorenom pakovanju — 2 dana (dan prijema i sledeći), najbolji kvalitet na dan prijema. U frižideru u čvrstom pakovanju — do 3 dana, ali taj režim obavezno testirati u uslovima vašeg objekta. Pre serviranja proizvod se dovede na sobnu temperaturu, zatim zagreje radi osvežavanja neposredno pre izdavanja. Ponavljanje (hlađenje → zagrevanje) proizvodi ne podnose — osvežavati samo jednom. Zamrzavanje — do 1 mesec.'}},
+  {type:'h',t:{ru:'Изделия с карамельной начинкой',sr:'Proizvodi sa karamel filom'}},
+  {type:'p',t:{
+    ru:'Не замораживать ни при каких условиях. Карамель при разморозке расслаивается, кристаллизуется и теряет текстуру. Brioš sa karamelom и Babka sa cimetom i slanim karamelom: при комнатной температуре в закрытой упаковке — 1–2 дня, лучшее качество в день получения. В холодильнике — до 3 дней (так же протестировать). Перед подачей довести до комнатной температуры и кратко прогреть, чтобы карамель снова стала мягкой; не перегревать — карамель начинает течь. Освежать только один раз.',
+    sr:'Ne zamrzavati ni pod kojim uslovima. Karamel se pri odmrzavanju raslojava, kristališe i gubi teksturu. Brioš sa karamelom i Babka sa cimetom i slanim karamelom: na sobnoj temperaturi u zatvorenom pakovanju — 1–2 dana, najbolji kvalitet na dan prijema. U frižideru — do 3 dana (takođe testirati). Pre serviranja dovesti na sobnu temperaturu i kratko zagrejati da karamel ponovo omekša; ne pregrevati — karamel počinje da curi. Osvežavati samo jednom.'}},
+  {type:'h',t:{ru:'Rolnica sa sirom',sr:'Rolnica sa sirom'}},
+  {type:'p',t:{
+    ru:'При комнатной температуре — 1 день, лучшее качество в день получения. Для последующего хранения только холодильник при +2…+6 °C, срок 3 дня. Перед подачей довести до комнатной температуры или кратко прогреть; следить, чтобы сыр не подгорел. Заморозка — до 1 месяца.',
+    sr:'Na sobnoj temperaturi — 1 dan, najbolji kvalitet na dan prijema. Za dalje čuvanje samo frižider na +2…+6 °C, rok 3 dana. Pre serviranja dovesti na sobnu temperaturu ili kratko zagrejati; paziti da se sir ne zagori. Zamrzavanje — do 1 mesec.'}},
+  {type:'h',t:{ru:'Slani karamel (крем)',sr:'Slani karamel (krem)'}},
+  {type:'p',t:{
+    ru:'Холодильник при +2…+6 °C в плотно закрытой таре, срок 10 дней. Перед использованием дать постоять при комнатной температуре — так карамель становится пластичной для прослойки, начинки и декора. Не замораживать: при разморозке расслаивается.',
+    sr:'Frižider na +2…+6 °C u dobro zatvorenoj posudi, rok 10 dana. Pre upotrebe ostaviti na sobnoj temperaturi — tako karamel postaje plastičan za prelivanje, fil i dekor. Ne zamrzavati: pri odmrzavanju se raslojava.'}},
+  {type:'h',t:{ru:'Кексы',sr:'Kolači'}},
+  {type:'p',t:{
+    ru:'Lemon Drizzle Cake, Banana Hleb, Čokoladni Kolač. При комнатной температуре в закрытой упаковке — 3 дня (если у кекса нет крема сверху). Изделия с кремом в составе (например, Čokoladni Kolač) лучше всегда держать в холоде и нарезать непосредственно перед подачей. В холодильнике в плотной обёртке — до 6 дней; вкус и влажная текстура хорошо сохраняются. Подавать при комнатной температуре — перед выкладкой дать кексу согреться.',
+    sr:'Lemon Drizzle Cake, Banana Hleb, Čokoladni Kolač. Na sobnoj temperaturi u zatvorenom pakovanju — 3 dana (ako kolač nema krem odozgo). Proizvode sa kremom u sastavu (na primer, Čokoladni Kolač) bolje uvek držati u hladnom i seći neposredno pre serviranja. U frižideru u čvrstom pakovanju — do 6 dana; ukus i vlažna tekstura se dobro čuvaju. Servirati na sobnoj temperaturi — pre izlaganja pustiti da se kolač zagreje.'}},
+  {type:'h',t:{ru:'Подогрев и освежение',sr:'Zagrevanje i osvežavanje'}},
+  {type:'note',t:{
+    ru:'Важно: время и температуры могут отличаться в зависимости от вашего оборудования. Для каждого изделия необходим тест!',
+    sr:'Važno: vreme i temperature mogu da se razlikuju u zavisnosti od vaše opreme. Za svaki proizvod je potreban test!'}},
+  {type:'table',t:{
+    ru:[
+      ['Изделие','Температура и время','Примечание'],
+      ['Булки и бабки (без скоропорт. начинки)','150–160 °C, 2–3 мин','из холодильника — сначала до комнатной t°'],
+      ['С карамельной начинкой','150–160 °C, 2–3 мин','карамель должна стать мягкой, не перегревать'],
+      ['Кексы','подача при комнатной t°','—']
+    ],
+    sr:[
+      ['Proizvod','Temperatura i vreme','Napomena'],
+      ['Peciva i babke (bez kvarljivog fila)','150–160 °C, 2–3 min','iz frižidera — prvo na sobnu t°'],
+      ['Sa karamel filom','150–160 °C, 2–3 min','karamel treba da omekša, ne pregrevati'],
+      ['Kolači','serviranje na sobnoj t°','—']
+    ]}},
+  {type:'h',t:{ru:'Правила подогрева',sr:'Pravila zagrevanja'}},
+  {type:'p',t:{
+    ru:'Только духовой шкаф (конвекция или верх-низ). Микроволновую печь не использовать — тесто становится резиновым, карамель перегревается неравномерно. Изделия из холодильника сначала доводятся до комнатной температуры (≈20–30 минут), и только затем прогреваются. Освежение делается один раз, непосредственно перед подачей. Лайфхак: если оборудование пересушивает изделие, перед прогревом можно совсем чуть-чуть увлажнить поверхность из распылителя — буквально пара лёгких движений, без излишков.',
+    sr:'Samo rerna (konvekcija ili gore-dole). Mikrotalasnu ne koristiti — testo postaje gumeno, karamel se neravnomerno pregreva. Proizvodi iz frižidera se prvo dovode na sobnu temperaturu (≈20–30 minuta), pa tek onda zagrevaju. Osvežavanje se radi jednom, neposredno pre serviranja. Trik: ako oprema presušuje proizvod, pre zagrevanja površinu možete sasvim malo navlažiti raspršivačem — bukvalno par laganih poteza, bez viška.'}},
+  {type:'h',t:{ru:'Контроль качества после подогрева',sr:'Kontrola kvaliteta posle zagrevanja'}},
+  {type:'p',t:{
+    ru:'Корректно освежённое изделие: тёплое внутри, корочка слегка хрустит, мякиш мягкий и не подсохший, карамель/сыр мягкие и не вытекли. Если изделие осталось холодным внутри — добавить 30–60 секунд, не повышая температуру.',
+    sr:'Pravilno osveženo: toplo iznutra, korica blago hrska, sredina mekana i nije presušena, karamel/sir mekani i nisu iscureli. Ako je proizvod ostao hladan iznutra — dodati 30–60 sekundi, bez povećanja temperature.'}},
+  {type:'h',t:{ru:'Ограничения',sr:'Ograničenja'}},
+  {type:'p',t:{
+    ru:'Ориентир по температуре — 150–160 °C; превышать 160 °C нельзя, иначе тесто пересыхает, карамель течёт и пригорает, сыр вытекает. Время гибкое: 2–3 минуты достаточно для изделия комнатной температуры, для охлаждённого может потребоваться до 5 минут, на менее мощном оборудовании — больше. Ориентируйтесь не на таймер, а на состояние изделия. Не подогревать впрок «на витрину». Не замораживать карамельные изделия и крем.',
+    sr:'Orijentir za temperaturu — 150–160 °C; preko 160 °C nije dozvoljeno, jer testo presuši, karamel curi i zagoreva, sir iscuri. Vreme je fleksibilno: 2–3 minuta dovoljno za proizvod sobne temperature, za ohlađen može trebati do 5 minuta, na slabijoj opremi — više. Orijentišite se na stanje proizvoda, a ne na tajmer. Ne zagrevati unapred „za vitrinu". Ne zamrzavati karamel proizvode i krem.'}},
+  {type:'h',t:{ru:'Витрина и подача',sr:'Vitrina i serviranje'}},
+  {type:'p',t:{
+    ru:'Держите изделия под колпаком или в закрытой витрине — открытый воздух быстро сушит выпечку. Булки и бабки выставляйте порциями на текущий день; кексы можно держать нарезанными. Кремовые и сырные позиции не оставляйте при комнатной температуре дольше, чем необходимо для подачи.',
+    sr:'Držite proizvode pod zvonom ili u zatvorenoj vitrini — otvoren vazduh brzo suši pecivo. Peciva i babke izlažite u porcijama za tekući dan; kolače možete držati isečene. Krem i sir pozicije ne ostavljajte na sobnoj temperaturi duže nego što je potrebno za serviranje.'}},
+  {type:'h',t:{ru:'Контроль качества и претензии',sr:'Kontrola kvaliteta i reklamacije'}},
+  {type:'p',t:{
+    ru:'BreadVenture отвечает за качество продукции в момент её передачи партнёру. Дальнейшее хранение, подогрев и подача — в зоне ответственности партнёра. Претензии по качеству принимаются только при соблюдении условий настоящего документа и при обращении в течение 12 часов после получения (см. «Политика возврата» в основном прайс-листе). Отклонения вследствие нарушения условий хранения, подогрева или подачи на стороне партнёра рекламации не подлежат.',
+    sr:'BreadVenture odgovara za kvalitet proizvoda u trenutku predaje partneru. Dalje čuvanje, zagrevanje i serviranje su u zoni odgovornosti partnera. Reklamacije na kvalitet primaju se samo uz poštovanje uslova ovog dokumenta i uz obraćanje u roku od 12 sati po prijemu (vidi „Politiku povraćaja" u glavnom cenovniku). Odstupanja nastala usled kršenja uslova čuvanja, zagrevanja ili serviranja na strani partnera ne podležu reklamaciji.'}},
+  {type:'p',t:{
+    ru:'BreadVenture · breadventure.bakery@gmail.com · +381 63 705 7214 · Светлана Васильева (основательница)',
+    sr:'BreadVenture · breadventure.bakery@gmail.com · +381 63 705 7214 · Svetlana Vasiljeva (osnivačica)'}}
+]};
+
+function careTypeLabel(t){return t==='h'?'Заголовок':t==='table'?'Таблица':t==='note'?'Заметка':'Текст';}
+function careBlocksHtml(blocks,lang){
+  if(!blocks||!blocks.length)return '';
+  var h='';
+  blocks.forEach(function(b){
+    if(b.type==='h')h+='<h3 class="cg-h">'+esc((b.t&&b.t[lang])||'')+'</h3>';
+    else if(b.type==='note')h+='<div class="cg-note">'+esc((b.t&&b.t[lang])||'').replace(/\n/g,'<br>')+'</div>';
+    else if(b.type==='table'){
+      var t=(b.t&&b.t[lang])||[];
+      if(t.length){h+='<div class="cg-tablewrap"><table class="cg-table">';
+        t.forEach(function(row,ri){h+='<tr>';row.forEach(function(cell){var tag=ri===0?'th':'td';h+='<'+tag+'>'+esc(cell||'').replace(/\n/g,'<br>')+'</'+tag+'>';});h+='</tr>';});
+        h+='</table></div>';}
+    }else h+='<p class="cg-p">'+esc((b.t&&b.t[lang])||'').replace(/\n/g,'<br>')+'</p>';
+  });
+  return h;
+}
+function careEnsure(){if(!storageData||!Array.isArray(storageData.blocks))storageData=JSON.parse(JSON.stringify(DEFAULT_STORAGE));storageData.blocks=storageData.blocks||[];}
+function careTableEditorHtml(b,lang){
+  var t=(b.t&&b.t[lang])||[['']];if(!t.length)t=[['']];
+  var h='<div class="care-tablewrap" style="overflow-x:auto;"><table class="care-tedit">';
+  t.forEach(function(row,ri){
+    h+='<tr>';
+    row.forEach(function(cell,ci){var tag=ri===0?'th':'td';
+      h+='<'+tag+'><textarea class="ct-cell" data-r="'+ri+'" data-c="'+ci+'" rows="2">'+esc(cell||'')+'</textarea></'+tag+'>';});
+    h+='<td class="ct-actions"><button class="btn btn-line btn-sm ct-delrow" data-r="'+ri+'" title="удалить строку">✕</button></td>';
+    h+='</tr>';
+  });
+  h+='</table></div>';
+  h+='<div class="care-tbtns"><button class="btn btn-line btn-sm ct-addrow">+ строка</button><button class="btn btn-line btn-sm ct-addcol">+ столбец</button><button class="btn btn-line btn-sm danger ct-delcol">− столбец</button></div>';
+  return h;
+}
+function renderCareAdmin(){
+  careEnsure();
+  var lang=storeLang;
+  var ed=document.getElementById('careEditor');if(!ed)return;
+  var h='';
+  storageData.blocks.forEach(function(b,i){
+    h+='<div class="care-block" data-i="'+i+'">';
+    h+='<div class="care-bhead"><span class="care-btype">'+careTypeLabel(b.type)+'</span><span style="flex:1;"></span>'+
+       '<button class="btn btn-line btn-sm cb-up">↑</button><button class="btn btn-line btn-sm cb-down">↓</button>'+
+       '<button class="btn btn-line btn-sm danger cb-del">Удалить</button></div>';
+    if(b.type==='table')h+=careTableEditorHtml(b,lang);
+    else if(b.type==='h')h+='<input class="inp cb-text" value="'+esc((b.t&&b.t[lang])||'')+'" placeholder="Заголовок">';
+    else h+='<textarea class="inp cb-text" rows="'+(b.type==='note'?3:4)+'" placeholder="Текст">'+esc((b.t&&b.t[lang])||'')+'</textarea>';
+    h+='</div>';
+  });
+  ed.innerHTML=h;
+  bindCareEditor();
+  renderCarePreview();
+  var up=document.getElementById('careUpdated');
+  if(up)up.textContent=(storageData.updated?('Сохранено: '+new Date(storageData.updated).toLocaleString('ru-RU')):'Ещё не сохранено в облако');
+}
+function bindCareEditor(){
+  var lang=storeLang;
+  document.querySelectorAll('#careEditor .care-block').forEach(function(el){
+    var i=Number(el.dataset.i),b=storageData.blocks[i];
+    el.querySelector('.cb-up').addEventListener('click',function(){careMove(i,-1);});
+    el.querySelector('.cb-down').addEventListener('click',function(){careMove(i,1);});
+    el.querySelector('.cb-del').addEventListener('click',function(){if(confirm('Удалить блок?')){storageData.blocks.splice(i,1);renderCareAdmin();}});
+    var tx=el.querySelector('.cb-text');
+    if(tx)tx.addEventListener('input',function(){b.t=b.t||{};b.t[lang]=this.value;renderCarePreview();});
+    el.querySelectorAll('.ct-cell').forEach(function(c){
+      c.addEventListener('input',function(){var r=Number(this.dataset.r),ci=Number(this.dataset.c);
+        b.t=b.t||{};b.t[lang]=b.t[lang]||[];b.t[lang][r]=b.t[lang][r]||[];b.t[lang][r][ci]=this.value;renderCarePreview();});
+    });
+    var ar=el.querySelector('.ct-addrow');if(ar)ar.addEventListener('click',function(){careTableAddRow(b);renderCareAdmin();});
+    var ac=el.querySelector('.ct-addcol');if(ac)ac.addEventListener('click',function(){careTableAddCol(b);renderCareAdmin();});
+    var dc=el.querySelector('.ct-delcol');if(dc)dc.addEventListener('click',function(){careTableDelCol(b);renderCareAdmin();});
+    el.querySelectorAll('.ct-delrow').forEach(function(btn){btn.addEventListener('click',function(){careTableDelRow(b,Number(this.dataset.r));renderCareAdmin();});});
+  });
+}
+function careCols(b){var t=(b.t&&(b.t.ru||b.t.sr))||[[]];return (t[0]||[]).length||1;}
+function careTableAddRow(b){var n=careCols(b);['ru','sr'].forEach(function(L){b.t[L]=b.t[L]||[];var r=[];for(var i=0;i<n;i++)r.push('');b.t[L].push(r);});}
+function careTableAddCol(b){['ru','sr'].forEach(function(L){b.t[L]=b.t[L]||[[]];b.t[L].forEach(function(row){row.push('');});});}
+function careTableDelCol(b){if(careCols(b)<=1)return;['ru','sr'].forEach(function(L){(b.t[L]||[]).forEach(function(row){row.pop();});});}
+function careTableDelRow(b,r){var rows=(b.t&&b.t.ru&&b.t.ru.length)||0;if(rows<=1)return;['ru','sr'].forEach(function(L){if(b.t[L]&&b.t[L].length>r)b.t[L].splice(r,1);});}
+function careMove(i,d){var j=i+d;if(j<0||j>=storageData.blocks.length)return;var a=storageData.blocks;var tmp=a[i];a[i]=a[j];a[j]=tmp;renderCareAdmin();}
+function careAddBlock(type){careEnsure();
+  if(type==='table')storageData.blocks.push({type:'table',t:{ru:[['Колонка 1','Колонка 2'],['','']],sr:[['Kolona 1','Kolona 2'],['','']]}});
+  else storageData.blocks.push({type:type,t:{ru:'',sr:''}});
+  renderCareAdmin();
+}
+function renderCarePreview(){var pv=document.getElementById('carePreview');if(pv)pv.innerHTML=careBlocksHtml((storageData&&storageData.blocks)||[],storeLang)||'<p class="hint">Пусто</p>';}
+function saveStorage(){
+  careEnsure();storageData.updated=Date.now();
+  cloudPut('storage',storageData);
+  var up=document.getElementById('careUpdated');if(up)up.textContent='Сохранено: '+new Date(storageData.updated).toLocaleString('ru-RU');
+  toast('Раздел сохранён — партнёры увидят обновление');
+}
+function fillCareDocPartners(){
+  var sel=document.getElementById('careDocPartner');if(!sel)return;
+  var cur=sel.value;
+  var h='<option value="">— Общий (без получателя) —</option>';
+  (partners||[]).forEach(function(p){h+='<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>';});
+  sel.innerHTML=h;if(cur)sel.value=cur;
+}
+function buildCareDocHtml(pname,lang){
+  careEnsure();
+  var sr=(lang==='sr');
+  var title=sr?'Čuvanje i preporuke za upotrebu':'Хранение и рекомендации по использованию';
+  var brand=sr?'BreadVenture · zanatska pekara · Beograd':'BreadVenture · ремесленная пекарня · Белград';
+  var dateStr=new Date().toLocaleDateString(sr?'sr-RS':'ru-RU');
+  var meta='';
+  if(pname)meta=(sr?'Za: ':'Для: ')+esc(pname)+' · '+(sr?'Datum: ':'Дата: ')+dateStr;
+  else meta=(sr?'Datum: ':'Дата: ')+dateStr;
+  var body=careBlocksHtml(storageData.blocks,lang);
+  return '<!doctype html><html lang="'+(sr?'sr':'ru')+'"><head><meta charset="utf-8"><title>'+esc(title)+'</title>'+
+    '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'+
+    '<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&family=Wix+Madefor+Text:wght@400;600;700&display=swap" rel="stylesheet">'+
+    '<style>'+
+    '*{box-sizing:border-box;} body{font-family:\'Wix Madefor Text\',sans-serif;color:#1D1D1B;margin:0;padding:32px 30px;max-width:780px;}'+
+    'h1{font-family:\'Instrument Serif\',serif;font-style:italic;font-size:30px;margin:0 0 4px;}'+
+    '.brand{color:#777;font-size:13px;margin-bottom:2px;} .meta{color:#777;font-size:13px;margin-bottom:18px;border-bottom:2px solid #47A2DA;padding-bottom:12px;}'+
+    '.cg-h{font-family:\'Instrument Serif\',serif;font-style:italic;font-size:20px;margin:20px 0 7px;}'+
+    '.cg-p{font-size:13.5px;line-height:1.6;margin:0 0 11px;color:#2a2a28;}'+
+    '.cg-note{background:#FFF7DA;border:1px solid #f0e3a8;border-radius:9px;padding:10px 13px;font-size:13px;line-height:1.5;margin:0 0 13px;}'+
+    '.cg-tablewrap{margin:0 0 15px;} .cg-table{border-collapse:collapse;width:100%;font-size:12.5px;}'+
+    '.cg-table th{background:#47A2DA;color:#fff;text-align:left;padding:7px 9px;} .cg-table td{border:1px solid #e6e4d8;padding:7px 9px;vertical-align:top;}'+
+    '.cg-table tr:nth-child(even) td{background:#faf9f3;}'+
+    '.pbar{position:fixed;top:0;left:0;right:0;background:#1D1D1B;color:#fff;padding:8px;text-align:center;font-size:13px;}'+
+    '.pbar button{background:#47A2DA;color:#fff;border:none;border-radius:7px;padding:6px 14px;font-family:inherit;cursor:pointer;margin-left:8px;}'+
+    '@media print{.pbar{display:none;} body{padding:0;}}'+
+    '</style></head><body>'+
+    '<div class="pbar">'+(sr?'Datoteka spremna':'Документ готов')+' <button onclick="window.print()">'+(sr?'Sačuvaj kao PDF':'Сохранить как PDF')+'</button></div>'+
+    '<div style="height:36px;"></div>'+
+    '<h1>'+esc(title)+'</h1><div class="brand">'+esc(brand)+'</div><div class="meta">'+meta+'</div>'+
+    body+
+    '<script>window.addEventListener(\'load\',function(){setTimeout(function(){window.print();},400);});<\/script>'+
+    '</body></html>';
+}
+function exportCarePDF(){
+  var pid=document.getElementById('careDocPartner').value;
+  var lang=document.getElementById('careDocLang').value||'ru';
+  var pname='';
+  if(pid){var pp=(partners||[]).filter(function(x){return x.id===pid;})[0];if(pp)pname=pp.name;
+    var pr=(profilesAdmin||{})[pid];if(pr&&pr.company)pname=pr.company;}
+  var w=window.open('','_blank');
+  if(!w){alert('Разрешите всплывающие окна, чтобы открыть документ для печати/PDF.');return;}
+  w.document.open();w.document.write(buildCareDocHtml(pname,lang));w.document.close();
+}
+(function(){
+  function on(id,fn){var el=document.getElementById(id);if(el)el.addEventListener('click',fn);}
+  on('careAddH',function(){careAddBlock('h');});
+  on('careAddP',function(){careAddBlock('p');});
+  on('careAddNote',function(){careAddBlock('note');});
+  on('careAddTable',function(){careAddBlock('table');});
+  on('careSave',saveStorage);
+  on('careDocBtn',exportCarePDF);
+  document.querySelectorAll('#careLangSeg .seg-b').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('#careLangSeg .seg-b').forEach(function(x){x.classList.remove('active');});
+      b.classList.add('active');storeLang=b.dataset.lang;renderCareAdmin();
+    });
+  });
+})();
+
 /* ---------- облако: настройка и синхронизация ---------- */
 document.getElementById('syncBtn').addEventListener('click',function(){
   var msg='Облачная синхронизация (Google Таблица).\n\n';
@@ -5740,11 +6052,69 @@ document.getElementById('syncBtn').addEventListener('click',function(){
   }
 });
 
-/* ---------- init ---------- */
-loadAll().then(function(){
-  renderCatalog();renderTerms();renderVersions();renderKPArchive();renderFoot();renderPartners();
-  offerLines=[newLine()];renderOffer();
-});
+/* ---------- экран-замок (PIN) ---------- */
+function bvHash(s){
+  try{
+    var enc=new TextEncoder().encode('bvpin:'+s);
+    return crypto.subtle.digest('SHA-256',enc).then(function(buf){
+      return Array.prototype.map.call(new Uint8Array(buf),function(b){return ('0'+b.toString(16)).slice(-2);}).join('');
+    });
+  }catch(e){
+    var h=0,t='bvpin:'+s;for(var i=0;i<t.length;i++){h=(h*31+t.charCodeAt(i))|0;}
+    return Promise.resolve('f'+(h>>>0).toString(16));
+  }
+}
+function initLock(onUnlock){
+  var ov=document.getElementById('bvLock');
+  if(!ov){onUnlock();return;}
+  function unlock(){ov.style.display='none';onUnlock();}
+  var stored='';try{stored=localStorage.getItem('bv_b2b_pin')||'';}catch(e){}
+  var trust=0;try{trust=Number(localStorage.getItem('bv_b2b_pin_trust')||0);}catch(e){}
+  if(stored&&trust&&Date.now()<trust){unlock();return;}
+  var msg=document.getElementById('bvLockMsg'),err=document.getElementById('bvLockErr'),
+      inp=document.getElementById('bvLockPin'),btn=document.getElementById('bvLockBtn'),
+      trustEl=document.getElementById('bvLockTrust'),forgot=document.getElementById('bvLockForgot');
+  var creating=!stored;
+  if(creating){msg.textContent='Задайте PIN (4–8 цифр) — он будет нужен для входа';btn.textContent='Сохранить PIN';forgot.style.display='none';}
+  function fail(t){err.textContent=t;inp.value='';inp.focus();}
+  function submit(){
+    var v=(inp.value||'').trim();
+    if(creating){
+      if(!/^\d{4,8}$/.test(v)){fail('PIN — от 4 до 8 цифр');return;}
+      bvHash(v).then(function(h){try{localStorage.setItem('bv_b2b_pin',h);}catch(e){}
+        if(trustEl.checked){try{localStorage.setItem('bv_b2b_pin_trust',String(Date.now()+30*864e5));}catch(e){}}
+        unlock();});
+      return;
+    }
+    bvHash(v).then(function(h){
+      if(h===stored){
+        if(trustEl.checked){try{localStorage.setItem('bv_b2b_pin_trust',String(Date.now()+30*864e5));}catch(e){}}
+        else{try{localStorage.removeItem('bv_b2b_pin_trust');}catch(e){}}
+        unlock();
+      }else fail('Неверный PIN');
+    });
+  }
+  btn.addEventListener('click',submit);
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter')submit();});
+  forgot.addEventListener('click',function(){
+    var mk='';try{mk=localStorage.getItem('bv_b2b_master')||'';}catch(e){}
+    if(!mk){alert('Сбросить PIN можно через мастер-ключ, но он не сохранён на этом устройстве. Очистите данные сайта в браузере и задайте PIN заново.');return;}
+    var entered=prompt('Введите мастер-ключ (как в Code.gs), чтобы сбросить PIN:');
+    if(entered===null)return;
+    if(entered.trim()===mk){try{localStorage.removeItem('bv_b2b_pin');localStorage.removeItem('bv_b2b_pin_trust');}catch(e){}alert('PIN сброшен. Задайте новый.');location.reload();}
+    else alert('Мастер-ключ неверный.');
+  });
+  inp.focus();
+}
+
+/* ---------- init (после разблокировки) ---------- */
+function bootApp(){
+  loadAll().then(function(){
+    renderCatalog();renderTerms();renderVersions();renderKPArchive();renderFoot();renderPartners();
+    offerLines=[newLine()];renderOffer();
+  });
+}
+initLock(bootApp);
 </script>
 
 </body>

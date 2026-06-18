@@ -22,6 +22,15 @@
   .lang-sw .lng.on{background:var(--blue);color:#fff;}
   nav{display:flex;gap:8px;margin:16px 0 6px;flex-wrap:wrap;}
   nav button{flex:1 1 84px;min-width:84px;border:1px solid var(--line);background:#fff;border-radius:11px;padding:11px;font-family:inherit;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;}
+  .cg-h{font-family:'Instrument Serif',serif;font-style:italic;font-size:21px;margin:24px 0 9px;color:var(--dark);}
+  .cg-h:first-child{margin-top:6px;}
+  .cg-p{font-size:14.5px;line-height:1.62;margin:0 0 13px;color:#2a2a28;}
+  .cg-note{background:#FFF7DA;border:1px solid #f0e3a8;border-radius:12px;padding:12px 15px;font-size:14px;line-height:1.55;margin:0 0 15px;}
+  .cg-tablewrap{overflow-x:auto;margin:0 0 17px;-webkit-overflow-scrolling:touch;}
+  .cg-table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:460px;}
+  .cg-table th{background:var(--blue);color:#fff;text-align:left;padding:9px 11px;font-weight:600;}
+  .cg-table td{border:1px solid var(--line);padding:9px 11px;vertical-align:top;line-height:1.45;}
+  .cg-table tr:nth-child(even) td{background:#faf9f3;}
   nav button.on{background:var(--dark);color:#fff;border-color:var(--dark);}
   .note{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 15px;font-size:13px;color:#55544c;margin:14px 0;}
   .sec-title{font-family:'Instrument Serif',serif;font-style:italic;font-size:21px;margin:22px 0 10px;}
@@ -127,7 +136,7 @@ var PDV_DEFAULT=10, FREE_FROM=7000, MIN_DELIVERY=2500, DELIVERY=350;
 var catalog=[], qtyMap={}, pickup=false, CODE='', PARTNER='', ORDERS=[], DOCS=[], TERMS=[], FOOT={}, CATSR={}, VIEW='new', openOrder='';
 var SUBS=[], subQty={}, subEditId='', subDays=[];
 var POINTS=[], selPoint='';
-var deliveries=[], PROFILE={}, ANNOUNCE={};
+var deliveries=[], PROFILE={}, ANNOUNCE={}, STORAGE=null;
 var LANG='ru';try{LANG=localStorage.getItem('bv_partner_lang')||'ru';}catch(e){}
 var HOLIDAYS=[];var HOLIDAY_RAW=[];var LEAD_DAYS=2;
 try{CODE=localStorage.getItem('bv_partner_code')||'';}catch(e){}
@@ -236,7 +245,7 @@ function setView(v){VIEW=v;
   document.getElementById('logout').addEventListener('click',logout);
   var _tag=document.querySelector('.tag');if(_tag)_tag.textContent=(LANG==='sr'?'BreadVenture · zanatska pekara · Beograd':'BreadVenture · ремесленная пекарня · Белград');
   document.querySelectorAll('.lng').forEach(function(a){a.addEventListener('click',function(){LANG=this.dataset.l;try{localStorage.setItem('bv_partner_lang',LANG);}catch(e){}setView(VIEW);});});
-  if(v==='new')renderNew();else if(v==='orders')renderOrders();else if(v==='subs')renderSubs();else if(v==='points')renderPoints();else if(v==='me')renderMe();else if(v==='docs')renderDocs();else if(v==='price')renderPriceList();else renderTerms();
+  if(v==='new')renderNew();else if(v==='orders')renderOrders();else if(v==='subs')renderSubs();else if(v==='points')renderPoints();else if(v==='me')renderMe();else if(v==='care')renderStorage();else if(v==='docs')renderDocs();else if(v==='price')renderPriceList();else renderTerms();
 }
 function navHtml(active){
   return '<nav><button data-v="new" class="'+(active==='new'?'on':'')+'">'+L('neworder')+'</button>'+
@@ -244,6 +253,7 @@ function navHtml(active){
          '<button data-v="subs" class="'+(active==='subs'?'on':'')+'">'+(LANG==='sr'?'Redovno':'Регулярно')+(pendingCount()?' •'+pendingCount():'')+'</button>'+
          '<button data-v="points" class="'+(active==='points'?'on':'')+'">'+(LANG==='sr'?'Adrese':'Адреса')+(POINTS.length?' ('+POINTS.length+')':'')+'</button>'+
          '<button data-v="me" class="'+(active==='me'?'on':'')+'">'+(LANG==='sr'?'Moji podaci':'Мои данные')+'</button>'+
+         '<button data-v="care" class="'+(active==='care'?'on':'')+'">'+(LANG==='sr'?'Čuvanje':'Хранение')+'</button>'+
          '<button data-v="docs" class="'+(active==='docs'?'on':'')+'">'+L('docs')+(DOCS.length?' ('+DOCS.length+')':'')+'</button>'+
          '<button data-v="price" class="'+(active==='price'?'on':'')+'">'+L('pricetab')+'</button>'+
          '<button data-v="info" class="'+(active==='info'?'on':'')+'">'+L('info')+'</button></nav>';
@@ -875,6 +885,34 @@ function saveMe(){
     }).catch(function(){alert(LANG==='sr'?'Greška':'Ошибка');btn.disabled=false;btn.textContent=(LANG==='sr'?'Sačuvaj':'Сохранить');});
 }
 
+/* ---------- хранение и рекомендации (только просмотр) ---------- */
+function careBlocksHtml(blocks,lang){
+  if(!blocks||!blocks.length)return '';
+  var h='';
+  blocks.forEach(function(b){
+    if(b.type==='h')h+='<h3 class="cg-h">'+esc((b.t&&b.t[lang])||'')+'</h3>';
+    else if(b.type==='note')h+='<div class="cg-note">'+esc((b.t&&b.t[lang])||'').replace(/\n/g,'<br>')+'</div>';
+    else if(b.type==='table'){
+      var t=(b.t&&b.t[lang])||[];
+      if(t.length){h+='<div class="cg-tablewrap"><table class="cg-table">';
+        t.forEach(function(row,ri){h+='<tr>';row.forEach(function(cell){var tag=ri===0?'th':'td';h+='<'+tag+'>'+esc(cell||'').replace(/\n/g,'<br>')+'</'+tag+'>';});h+='</tr>';});
+        h+='</table></div>';}
+    }else h+='<p class="cg-p">'+esc((b.t&&b.t[lang])||'').replace(/\n/g,'<br>')+'</p>';
+  });
+  return h;
+}
+function renderStorage(){
+  var sr=(LANG==='sr');
+  document.getElementById('hTitle').textContent=(sr?'Čuvanje i preporuke':'Хранение и рекомендации');
+  document.getElementById('bar').style.display='none';
+  var c=document.getElementById('content');var h=navHtml('care');
+  h+='<div class="sec-title" style="font-size:23px;">'+(sr?'Čuvanje i preporuke za upotrebu':'Хранение и рекомендации по использованию')+'</div>';
+  var blocks=(STORAGE&&STORAGE.blocks)||[];
+  if(blocks.length)h+=careBlocksHtml(blocks,LANG);
+  else h+='<p class="hint" style="margin-top:10px;">'+(sr?'Sekcija će uskoro biti popunjena.':'Раздел скоро будет заполнен.')+'</p>';
+  c.innerHTML=h;bindNav();
+}
+
 /* ---------- вход по коду ---------- */
 function showLogin(err){
   document.getElementById('hTitle').textContent=(LANG==='sr'?'Kabinet partnera':'Кабинет партнёра');
@@ -894,7 +932,7 @@ function applyAuth(j,code){
   CODE=code;PARTNER=(j.partner&&j.partner.name)||'';
   try{localStorage.setItem('bv_partner_code',code);}catch(e){}
   var data=j.data||{};catalog=(data.catalog||[]).filter(function(it){return it&&it.name&&it.retail!=null;});
-  ORDERS=j.orders||[];DOCS=j.documents||[];POINTS=j.points||[];PROFILE=j.profile||{};ANNOUNCE=(data.announce)||{};deliveries=[];
+  ORDERS=j.orders||[];DOCS=j.documents||[];POINTS=j.points||[];PROFILE=j.profile||{};ANNOUNCE=(data.announce)||{};STORAGE=(data.storage)||null;deliveries=[];
   TERMS=Array.isArray(data.terms)?data.terms:[];FOOT=data.foot||{};CATSR=data.catNamesSr||{};
   if(data.settings){var s=data.settings;if(s.free!=null)FREE_FROM=Number(s.free)||FREE_FROM;if(s.minDeliv!=null)MIN_DELIVERY=Number(s.minDeliv)||MIN_DELIVERY;if(s.deliv!=null)DELIVERY=Number(s.deliv)||DELIVERY;if(Array.isArray(s.holidays)){HOLIDAY_RAW=s.holidays;HOLIDAYS=s.holidays.map(function(h){return typeof h==='string'?h:(h&&h.date)||'';}).filter(Boolean);}if(s.leadDays!=null)LEAD_DAYS=Number(s.leadDays)||LEAD_DAYS;}
   setView('new');
