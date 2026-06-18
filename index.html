@@ -48,9 +48,8 @@
   .sync-btn:active{transform:scale(.97);}
   @media(max-width:560px){.sync-box span.lbl{display:none;}}
 
-  .tabs{display:flex;gap:4px;margin:24px 0 22px;border-bottom:1px solid var(--line);
-        overflow-x:auto;-webkit-overflow-scrolling:touch;}
-  .tab{padding:12px 17px;font-size:15px;font-weight:600;color:var(--faint);white-space:nowrap;
+  .tabs{display:flex;flex-wrap:wrap;gap:4px 8px;margin:24px 0 22px;border-bottom:1px solid var(--line);}
+  .tab{padding:11px 15px;font-size:14.5px;font-weight:600;color:var(--faint);white-space:nowrap;
        border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s;}
   .tab:hover{color:var(--dark);}
   
@@ -316,14 +315,18 @@
   .cal-day.past{color:#cfccc0;cursor:not-allowed;background:#fafaf7;}
   .cal-day.hol{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:700;}
   .cal-day.today{box-shadow:inset 0 0 0 2px var(--yellow);}
-  .cg-h{font-family:'Instrument Serif',serif;font-style:italic;font-size:21px;margin:22px 0 8px;color:#1D1D1B;}
-  .cg-p{font-size:14.5px;line-height:1.6;margin:0 0 12px;color:#2a2a28;}
-  .cg-note{background:#FFF7DA;border:1px solid #f0e3a8;border-radius:11px;padding:11px 14px;font-size:14px;line-height:1.55;margin:0 0 14px;}
-  .cg-tablewrap{overflow-x:auto;margin:0 0 16px;}
-  .cg-table{border-collapse:collapse;width:100%;font-size:13.5px;}
-  .cg-table th{background:#47A2DA;color:#fff;text-align:left;padding:8px 10px;font-weight:600;}
-  .cg-table td{border:1px solid var(--line);padding:8px 10px;vertical-align:top;}
+  .cg-h{font-family:'Wix Madefor Text',sans-serif;font-weight:700;font-size:16px;letter-spacing:.01em;margin:24px 0 9px;color:#1D1D1B;}
+  .cg-p{font-size:14px;line-height:1.65;margin:0 0 12px;color:#33332f;}
+  .cg-note{border:1px solid #ecdb94;background:#FFF7DA;color:#6b5b16;border-radius:12px;padding:12px 15px;font-size:13.5px;line-height:1.6;margin:0 0 15px;}
+  .cg-tablewrap{overflow-x:auto;margin:2px 0 18px;}
+  .cg-table{border-collapse:collapse;width:100%;font-size:13px;}
+  .cg-table th{background:#47A2DA;color:#fff;text-align:left;padding:9px 11px;font-weight:600;font-size:12.5px;}
+  .cg-table td{border:1px solid #e6e4d8;padding:9px 11px;vertical-align:top;line-height:1.5;}
   .cg-table tr:nth-child(even) td{background:#faf9f3;}
+  .cg-doctitle{font-family:'Instrument Serif',serif;font-style:italic;font-size:29px;line-height:1.12;margin:0 0 4px;color:#1D1D1B;}
+  .cg-brand{color:#8a8980;font-size:13px;}
+  .cg-meta{color:#8a8980;font-size:13px;padding-bottom:14px;margin-bottom:6px;border-bottom:2px solid #47A2DA;}
+  .cg-meta:empty{border-bottom:none;padding:0;margin:0 0 8px;}
   .care-block{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:#fff;}
   .care-bhead{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
   .care-btype{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.04em;}
@@ -333,7 +336,10 @@
   .care-tedit th .ct-cell{font-weight:700;}
   .care-tbtns{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;}
   .ct-actions{width:30px;text-align:center;}
-  .care-preview{border:1px dashed var(--line);border-radius:12px;padding:14px 16px;background:#fff;}
+  .care-colors{display:flex;gap:7px;margin-top:9px;}
+  .cc-sw{width:24px;height:24px;border-radius:50%;border:2px solid;cursor:pointer;padding:0;}
+  .cc-sw.on{box-shadow:0 0 0 2px #fff,0 0 0 4px #1D1D1B;}
+  .care-preview{border:1px solid var(--line);border-radius:14px;padding:26px 28px;background:#fff;}
 </style>
 </head>
 <body>
@@ -4187,12 +4193,13 @@
       <p class="hint" style="margin-top:8px;">Этот адрес нигде не хранит цены — прайс подгружается только после ввода кода.</p>
     </div>
     <div class="card">
-      <div class="cat-title" style="margin-top:0;">Объявление партнёрам</div>
-      <p class="hint" style="margin-bottom:10px;">Текст увидят все партнёры в кабинете — баннером на странице нового заказа. Например: появилась новинка «Бабка с лимоном», смотрите прайс.</p>
-      <div class="field"><label class="lbl">Текст (RU)</label><textarea class="inp" id="annRu" rows="3" placeholder="Обратите внимание — у нас новинка «Бабка с лимоном», ознакомьтесь с прайс-листом!"></textarea></div>
-      <div class="field"><label class="lbl">Текст (SR, необязательно)</label><textarea class="inp" id="annSr" rows="3" placeholder="Tekst na srpskom (opciono)"></textarea></div>
-      <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;margin:6px 0 12px;"><input type="checkbox" id="annActive"> Показывать партнёрам</label>
-      <div class="actions"><button class="btn btn-primary btn-sm" id="annSave">Сохранить объявление</button></div>
+      <div class="cat-title" style="margin-top:0;">Объявления партнёрам</div>
+      <p class="hint" style="margin-bottom:10px;">Партнёры видят активные объявления баннером в кабинете (новые сверху). Можно добавлять, редактировать, удалять и включать/выключать.</p>
+      <div class="field"><label class="lbl">Текст (RU)</label><textarea class="inp" id="annRu" rows="2" placeholder="Например: появилась новинка «Бабка с лимоном» — смотрите прайс."></textarea></div>
+      <div class="field"><label class="lbl">Текст (SR, необязательно)</label><textarea class="inp" id="annSr" rows="2" placeholder="Tekst na srpskom (opciono)"></textarea></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;margin:6px 0 12px;"><input type="checkbox" id="annActive" checked> Показывать партнёрам</label>
+      <div class="actions"><button class="btn btn-primary btn-sm" id="annSave">Добавить объявление</button> <button class="btn btn-line btn-sm" id="annCancel" style="display:none;">Отмена</button></div>
+      <div id="annList" style="margin-top:16px;"></div>
     </div>
     <div class="card">
       <div class="cat-title" style="margin-top:0;">Документы партнёров</div>
@@ -4343,7 +4350,7 @@ function DC(){return [
 ];}
 
 var catalog=[], terms=[], offerLines=[], priceHistory=[], kpArchive=[], partners=[], catNamesSr={}, partnerPrefs={}, holidays=[], lastKP=null, selectedCats={};
-var profilesAdmin={}, pointsAdmin=[], announceData={}, openPartnerId='';
+var profilesAdmin={}, pointsAdmin=[], announceData=[], openPartnerId='';
 var storageData=null, storeLang='ru';
 
 /* ---- облако (Google Apps Script + Таблица) ---- */
@@ -4397,7 +4404,7 @@ function applyCloudData(data){
   if(data.settings&&Array.isArray(data.settings.holidays))holidays=data.settings.holidays;
   if(data.profiles&&typeof data.profiles==='object')profilesAdmin=data.profiles;
   if(Array.isArray(data.points))pointsAdmin=data.points;
-  if(data.announce&&typeof data.announce==='object')announceData=data.announce;
+  if(data.announce)announceData=normalizeAnnounce(data.announce);
   if(data.storage&&typeof data.storage==='object')storageData=data.storage;
   if(data.foot){for(var fk in DEFAULT_FOOT)if(data.foot[fk]!=null)footData[fk]=data.foot[fk];}
 }
@@ -5698,13 +5705,65 @@ document.getElementById('addPartner').addEventListener('click',function(){
 });
 (function(){var ou=document.getElementById('orderUrl');if(ou){try{ou.value=localStorage.getItem('bv_b2b_order_url')||'';}catch(e){}
   ou.addEventListener('input',function(){try{localStorage.setItem('bv_b2b_order_url',this.value);}catch(e){}});}})();
-function fillAnnounce(){var a=announceData||{};var r=document.getElementById('annRu'),s=document.getElementById('annSr'),c=document.getElementById('annActive');if(r&&document.activeElement!==r)r.value=a.ru||'';if(s&&document.activeElement!==s)s.value=a.sr||'';if(c)c.checked=!!a.active;}
-(function(){var sv=document.getElementById('annSave');if(!sv)return;
-  sv.addEventListener('click',function(){
-    announceData={ru:(document.getElementById('annRu').value||'').trim(),sr:(document.getElementById('annSr').value||'').trim(),active:document.getElementById('annActive').checked,updated:Date.now()};
-    cloudPut('announce',announceData);toast('Объявление сохранено — партнёры увидят его в кабинете');
+var annDraftId=null;
+function normalizeAnnounce(a){
+  if(Array.isArray(a))return a.map(function(x){return {id:x.id||('a'+Math.random().toString(36).slice(2)),ru:x.ru||'',sr:x.sr||'',active:x.active!==false,ts:x.ts||x.updated||Date.now()};});
+  if(a&&typeof a==='object'&&(a.ru||a.sr))return [{id:'a'+Math.random().toString(36).slice(2),ru:a.ru||'',sr:a.sr||'',active:a.active!==false,ts:a.updated||Date.now()}];
+  return [];
+}
+function annById(id){return announceData.filter(function(x){return x.id===id;})[0];}
+function saveAnnounce(){cloudPut('announce',announceData);}
+function annResetForm(){annDraftId=null;
+  var r=document.getElementById('annRu'),s=document.getElementById('annSr'),c=document.getElementById('annActive');
+  if(r)r.value='';if(s)s.value='';if(c)c.checked=true;
+  var sv=document.getElementById('annSave'),cn=document.getElementById('annCancel');
+  if(sv)sv.textContent='Добавить объявление';if(cn)cn.style.display='none';
+}
+function annEdit(id){var a=annById(id);if(!a)return;annDraftId=id;
+  document.getElementById('annRu').value=a.ru||'';document.getElementById('annSr').value=a.sr||'';document.getElementById('annActive').checked=a.active!==false;
+  document.getElementById('annSave').textContent='Сохранить изменения';document.getElementById('annCancel').style.display='';
+  document.getElementById('annRu').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function renderAnnounceList(){
+  var w=document.getElementById('annList');if(!w)return;
+  if(!announceData.length){w.innerHTML='<p class="hint">Объявлений пока нет.</p>';return;}
+  var arr=announceData.slice().sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+  var h='';
+  arr.forEach(function(a){
+    var dt='';try{dt=new Date(a.ts).toLocaleString('ru-RU');}catch(e){}
+    h+='<div class="ann-item" data-id="'+esc(a.id)+'" style="border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-bottom:9px;background:#fff;">'+
+       '<div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;">'+
+       '<div style="flex:1;min-width:200px;">'+
+       '<div style="font-size:14px;line-height:1.45;">'+esc(a.ru||a.sr||'(пусто)')+'</div>'+
+       '<div class="hint" style="margin-top:4px;">'+esc(dt)+(a.active?' · <span style="color:#1e8e5a;font-weight:600;">показывается</span>':' · <span style="color:var(--muted);">скрыто</span>')+'</div>'+
+       '</div>'+
+       '<div style="display:flex;gap:6px;flex-wrap:wrap;">'+
+       '<button class="btn btn-line btn-sm an-toggle">'+(a.active?'Скрыть':'Показать')+'</button>'+
+       '<button class="btn btn-line btn-sm an-edit">Ред.</button>'+
+       '<button class="btn btn-line btn-sm danger an-del">Удалить</button>'+
+       '</div></div></div>';
   });
-  fillAnnounce();
+  w.innerHTML=h;
+  w.querySelectorAll('.ann-item').forEach(function(el){
+    var id=el.dataset.id;
+    el.querySelector('.an-toggle').addEventListener('click',function(){var a=annById(id);if(a){a.active=!a.active;saveAnnounce();renderAnnounceList();toast('Сохранено');}});
+    el.querySelector('.an-edit').addEventListener('click',function(){annEdit(id);});
+    el.querySelector('.an-del').addEventListener('click',function(){if(confirm('Удалить объявление?')){announceData=announceData.filter(function(x){return x.id!==id;});saveAnnounce();renderAnnounceList();toast('Удалено');}});
+  });
+}
+function fillAnnounce(){renderAnnounceList();}
+(function(){
+  var sv=document.getElementById('annSave');if(!sv)return;
+  sv.addEventListener('click',function(){
+    var ru=(document.getElementById('annRu').value||'').trim();
+    var sr=(document.getElementById('annSr').value||'').trim();
+    var active=document.getElementById('annActive').checked;
+    if(!ru&&!sr){toast('Введите текст объявления');return;}
+    if(annDraftId){var a=annById(annDraftId);if(a){a.ru=ru;a.sr=sr;a.active=active;a.ts=Date.now();}}
+    else announceData.push({id:'a'+Date.now().toString(36)+Math.floor(Math.random()*1000),ru:ru,sr:sr,active:active,ts:Date.now()});
+    saveAnnounce();annResetForm();renderAnnounceList();toast('Объявление сохранено');
+  });
+  var cn=document.getElementById('annCancel');if(cn)cn.addEventListener('click',annResetForm);
 })();
 
 /* ---------- документы партнёров ---------- */
@@ -5771,6 +5830,13 @@ document.querySelector('.tab[data-tab="partners"]').addEventListener('click',fun
 
 
 /* ---------- хранение и рекомендации (админка) ---------- */
+var CARE_COLORS={
+  yellow:{bg:'#FFF7DA',bd:'#ecdb94',fg:'#6b5b16',name:'Жёлтый'},
+  red:{bg:'#FCEBEA',bd:'#f0b3ad',fg:'#962f26',name:'Красный'},
+  blue:{bg:'#E8F4FC',bd:'#9fcdeb',fg:'#175680',name:'Синий'},
+  green:{bg:'#EAF6EE',bd:'#a6d8bb',fg:'#1d6840',name:'Зелёный'},
+  grey:{bg:'#F0F0EA',bd:'#dcdad0',fg:'#45443e',name:'Серый'}
+};
 var DEFAULT_STORAGE={blocks:[
   {type:'p',t:{
     ru:'Вся продукция BreadVenture — живая, ремесленная, без консервантов. Срок годности короче, чем у промышленной выпечки, поэтому правильное хранение и подача напрямую определяют качество на витрине партнёра. Условия различаются по типу начинки: изделия с карамелью и крем заморозку не переносят, а холодильное хранение каждого изделия необходимо протестировать в условиях конкретного заведения.',
@@ -5793,7 +5859,7 @@ var DEFAULT_STORAGE={blocks:[
       ['Slani karamel (krem)','—','10 dana','ne zamrzavati'],
       ['Kolači\n(Lemon Drizzle, Banana Hleb, Čokoladni Kolač — sa kremom samo frižider)','3 dana','do 6 dana (u čvrstom pakovanju)','—']
     ]}},
-  {type:'note',t:{
+  {type:'note',color:'yellow',t:{
     ru:'* Холодильное хранение булок и бабок обязательно протестировать в условиях заведения (тип печи, влажность, скорость и равномерность прогрева) перед регулярным использованием.',
     sr:'* Čuvanje peciva i babki u frižideru obavezno testirati u uslovima objekta (vrsta peći, vlažnost, brzina i ravnomernost zagrevanja) pre redovne upotrebe.'}},
   {type:'h',t:{ru:'Булки и бабки без скоропортящейся начинки',sr:'Peciva i babke bez kvarljivog fila'}},
@@ -5817,7 +5883,7 @@ var DEFAULT_STORAGE={blocks:[
     ru:'Lemon Drizzle Cake, Banana Hleb, Čokoladni Kolač. При комнатной температуре в закрытой упаковке — 3 дня (если у кекса нет крема сверху). Изделия с кремом в составе (например, Čokoladni Kolač) лучше всегда держать в холоде и нарезать непосредственно перед подачей. В холодильнике в плотной обёртке — до 6 дней; вкус и влажная текстура хорошо сохраняются. Подавать при комнатной температуре — перед выкладкой дать кексу согреться.',
     sr:'Lemon Drizzle Cake, Banana Hleb, Čokoladni Kolač. Na sobnoj temperaturi u zatvorenom pakovanju — 3 dana (ako kolač nema krem odozgo). Proizvode sa kremom u sastavu (na primer, Čokoladni Kolač) bolje uvek držati u hladnom i seći neposredno pre serviranja. U frižideru u čvrstom pakovanju — do 6 dana; ukus i vlažna tekstura se dobro čuvaju. Servirati na sobnoj temperaturi — pre izlaganja pustiti da se kolač zagreje.'}},
   {type:'h',t:{ru:'Подогрев и освежение',sr:'Zagrevanje i osvežavanje'}},
-  {type:'note',t:{
+  {type:'note',color:'blue',t:{
     ru:'Важно: время и температуры могут отличаться в зависимости от вашего оборудования. Для каждого изделия необходим тест!',
     sr:'Važno: vreme i temperature mogu da se razlikuju u zavisnosti od vaše opreme. Za svaki proizvod je potreban test!'}},
   {type:'table',t:{
@@ -5842,7 +5908,7 @@ var DEFAULT_STORAGE={blocks:[
     ru:'Корректно освежённое изделие: тёплое внутри, корочка слегка хрустит, мякиш мягкий и не подсохший, карамель/сыр мягкие и не вытекли. Если изделие осталось холодным внутри — добавить 30–60 секунд, не повышая температуру.',
     sr:'Pravilno osveženo: toplo iznutra, korica blago hrska, sredina mekana i nije presušena, karamel/sir mekani i nisu iscureli. Ako je proizvod ostao hladan iznutra — dodati 30–60 sekundi, bez povećanja temperature.'}},
   {type:'h',t:{ru:'Ограничения',sr:'Ograničenja'}},
-  {type:'p',t:{
+  {type:'note',color:'red',t:{
     ru:'Ориентир по температуре — 150–160 °C; превышать 160 °C нельзя, иначе тесто пересыхает, карамель течёт и пригорает, сыр вытекает. Время гибкое: 2–3 минуты достаточно для изделия комнатной температуры, для охлаждённого может потребоваться до 5 минут, на менее мощном оборудовании — больше. Ориентируйтесь не на таймер, а на состояние изделия. Не подогревать впрок «на витрину». Не замораживать карамельные изделия и крем.',
     sr:'Orijentir za temperaturu — 150–160 °C; preko 160 °C nije dozvoljeno, jer testo presuši, karamel curi i zagoreva, sir iscuri. Vreme je fleksibilno: 2–3 minuta dovoljno za proizvod sobne temperature, za ohlađen može trebati do 5 minuta, na slabijoj opremi — više. Orijentišite se na stanje proizvoda, a ne na tajmer. Ne zagrevati unapred „za vitrinu". Ne zamrzavati karamel proizvode i krem.'}},
   {type:'h',t:{ru:'Витрина и подача',sr:'Vitrina i serviranje'}},
@@ -5858,13 +5924,14 @@ var DEFAULT_STORAGE={blocks:[
     sr:'BreadVenture · breadventure.bakery@gmail.com · +381 63 705 7214 · Svetlana Vasiljeva (osnivačica)'}}
 ]};
 
-function careTypeLabel(t){return t==='h'?'Заголовок':t==='table'?'Таблица':t==='note'?'Заметка':'Текст';}
+function careTypeLabel(t){return t==='h'?'Заголовок':t==='table'?'Таблица':t==='note'?'Выделение':'Текст';}
 function careBlocksHtml(blocks,lang){
   if(!blocks||!blocks.length)return '';
   var h='';
   blocks.forEach(function(b){
     if(b.type==='h')h+='<h3 class="cg-h">'+esc((b.t&&b.t[lang])||'')+'</h3>';
-    else if(b.type==='note')h+='<div class="cg-note">'+esc((b.t&&b.t[lang])||'').replace(/\n/g,'<br>')+'</div>';
+    else if(b.type==='note'){var col=CARE_COLORS[b.color||'yellow']||CARE_COLORS.yellow;
+      h+='<div class="cg-note" style="background:'+col.bg+';border-color:'+col.bd+';color:'+col.fg+';">'+esc((b.t&&b.t[lang])||'').replace(/\n/g,'<br>')+'</div>';}
     else if(b.type==='table'){
       var t=(b.t&&b.t[lang])||[];
       if(t.length){h+='<div class="cg-tablewrap"><table class="cg-table">';
@@ -5875,6 +5942,12 @@ function careBlocksHtml(blocks,lang){
   return h;
 }
 function careEnsure(){if(!storageData||!Array.isArray(storageData.blocks))storageData=JSON.parse(JSON.stringify(DEFAULT_STORAGE));storageData.blocks=storageData.blocks||[];}
+function careColorPaletteHtml(b){
+  var cur=b.color||'yellow',h='<div class="care-colors">';
+  Object.keys(CARE_COLORS).forEach(function(k){var c=CARE_COLORS[k];
+    h+='<button class="cc-sw'+(cur===k?' on':'')+'" data-col="'+k+'" title="'+c.name+'" style="background:'+c.bg+';border-color:'+c.bd+';"></button>';});
+  h+='</div>';return h;
+}
 function careTableEditorHtml(b,lang){
   var t=(b.t&&b.t[lang])||[['']];if(!t.length)t=[['']];
   var h='<div class="care-tablewrap" style="overflow-x:auto;"><table class="care-tedit">';
@@ -5895,13 +5968,16 @@ function renderCareAdmin(){
   var ed=document.getElementById('careEditor');if(!ed)return;
   var h='';
   storageData.blocks.forEach(function(b,i){
+    var first=(i===0),last=(i===storageData.blocks.length-1);
     h+='<div class="care-block" data-i="'+i+'">';
     h+='<div class="care-bhead"><span class="care-btype">'+careTypeLabel(b.type)+'</span><span style="flex:1;"></span>'+
-       '<button class="btn btn-line btn-sm cb-up">↑</button><button class="btn btn-line btn-sm cb-down">↓</button>'+
+       '<button class="btn btn-line btn-sm cb-up"'+(first?' disabled style="opacity:.4;"':'')+' title="выше">↑</button>'+
+       '<button class="btn btn-line btn-sm cb-down"'+(last?' disabled style="opacity:.4;"':'')+' title="ниже">↓</button>'+
        '<button class="btn btn-line btn-sm danger cb-del">Удалить</button></div>';
     if(b.type==='table')h+=careTableEditorHtml(b,lang);
     else if(b.type==='h')h+='<input class="inp cb-text" value="'+esc((b.t&&b.t[lang])||'')+'" placeholder="Заголовок">';
     else h+='<textarea class="inp cb-text" rows="'+(b.type==='note'?3:4)+'" placeholder="Текст">'+esc((b.t&&b.t[lang])||'')+'</textarea>';
+    if(b.type==='note')h+=careColorPaletteHtml(b);
     h+='</div>';
   });
   ed.innerHTML=h;
@@ -5923,6 +5999,7 @@ function bindCareEditor(){
       c.addEventListener('input',function(){var r=Number(this.dataset.r),ci=Number(this.dataset.c);
         b.t=b.t||{};b.t[lang]=b.t[lang]||[];b.t[lang][r]=b.t[lang][r]||[];b.t[lang][r][ci]=this.value;renderCarePreview();});
     });
+    el.querySelectorAll('.cc-sw').forEach(function(sw){sw.addEventListener('click',function(){b.color=this.dataset.col;renderCareAdmin();});});
     var ar=el.querySelector('.ct-addrow');if(ar)ar.addEventListener('click',function(){careTableAddRow(b);renderCareAdmin();});
     var ac=el.querySelector('.ct-addcol');if(ac)ac.addEventListener('click',function(){careTableAddCol(b);renderCareAdmin();});
     var dc=el.querySelector('.ct-delcol');if(dc)dc.addEventListener('click',function(){careTableDelCol(b);renderCareAdmin();});
@@ -5937,15 +6014,30 @@ function careTableDelRow(b,r){var rows=(b.t&&b.t.ru&&b.t.ru.length)||0;if(rows<=
 function careMove(i,d){var j=i+d;if(j<0||j>=storageData.blocks.length)return;var a=storageData.blocks;var tmp=a[i];a[i]=a[j];a[j]=tmp;renderCareAdmin();}
 function careAddBlock(type){careEnsure();
   if(type==='table')storageData.blocks.push({type:'table',t:{ru:[['Колонка 1','Колонка 2'],['','']],sr:[['Kolona 1','Kolona 2'],['','']]}});
+  else if(type==='note')storageData.blocks.push({type:'note',color:'yellow',t:{ru:'',sr:''}});
   else storageData.blocks.push({type:type,t:{ru:'',sr:''}});
   renderCareAdmin();
 }
-function renderCarePreview(){var pv=document.getElementById('carePreview');if(pv)pv.innerHTML=careBlocksHtml((storageData&&storageData.blocks)||[],storeLang)||'<p class="hint">Пусто</p>';}
+function careDocInnerHtml(lang,pname,withMeta){
+  var sr=(lang==='sr');
+  var title=sr?'Čuvanje i preporuke za upotrebu':'Хранение и рекомендации по использованию';
+  var brand=sr?'BreadVenture · zanatska pekara · Beograd':'BreadVenture · ремесленная пекарня · Белград';
+  var head='<div class="cg-doctitle">'+esc(title)+'</div><div class="cg-brand">'+esc(brand)+'</div>';
+  if(withMeta){var dateStr=new Date().toLocaleDateString(sr?'sr-RS':'ru-RU');
+    var meta=(pname?((sr?'Za: ':'Для: ')+esc(pname)+' · '):'')+(sr?'Datum: ':'Дата: ')+dateStr;
+    head+='<div class="cg-meta">'+meta+'</div>';}
+  else head+='<div class="cg-meta"></div>';
+  return head+careBlocksHtml(storageData.blocks,lang);
+}
+function renderCarePreview(){var pv=document.getElementById('carePreview');if(!pv)return;
+  pv.innerHTML=careDocInnerHtml(storeLang,'',false);}
 function saveStorage(){
-  careEnsure();storageData.updated=Date.now();
+  careEnsure();
+  if(typeof cloudState!=='undefined'&&cloudState!=='on'){alert('Облако не подключено — раздел не сохранится. Нажмите «Облако…» и подключитесь, затем сохраните снова.');return;}
+  storageData.updated=Date.now();
   cloudPut('storage',storageData);
   var up=document.getElementById('careUpdated');if(up)up.textContent='Сохранено: '+new Date(storageData.updated).toLocaleString('ru-RU');
-  toast('Раздел сохранён — партнёры увидят обновление');
+  toast('Раздел сохранён. Партнёр увидит его при следующем входе/обновлении.');
 }
 function fillCareDocPartners(){
   var sel=document.getElementById('careDocPartner');if(!sel)return;
@@ -5954,49 +6046,45 @@ function fillCareDocPartners(){
   (partners||[]).forEach(function(p){h+='<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>';});
   sel.innerHTML=h;if(cur)sel.value=cur;
 }
-function buildCareDocHtml(pname,lang){
-  careEnsure();
-  var sr=(lang==='sr');
-  var title=sr?'Čuvanje i preporuke za upotrebu':'Хранение и рекомендации по использованию';
-  var brand=sr?'BreadVenture · zanatska pekara · Beograd':'BreadVenture · ремесленная пекарня · Белград';
-  var dateStr=new Date().toLocaleDateString(sr?'sr-RS':'ru-RU');
-  var meta='';
-  if(pname)meta=(sr?'Za: ':'Для: ')+esc(pname)+' · '+(sr?'Datum: ':'Дата: ')+dateStr;
-  else meta=(sr?'Datum: ':'Дата: ')+dateStr;
-  var body=careBlocksHtml(storageData.blocks,lang);
-  return '<!doctype html><html lang="'+(sr?'sr':'ru')+'"><head><meta charset="utf-8"><title>'+esc(title)+'</title>'+
-    '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'+
-    '<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&family=Wix+Madefor+Text:wght@400;600;700&display=swap" rel="stylesheet">'+
-    '<style>'+
-    '*{box-sizing:border-box;} body{font-family:\'Wix Madefor Text\',sans-serif;color:#1D1D1B;margin:0;padding:32px 30px;max-width:780px;}'+
-    'h1{font-family:\'Instrument Serif\',serif;font-style:italic;font-size:30px;margin:0 0 4px;}'+
-    '.brand{color:#777;font-size:13px;margin-bottom:2px;} .meta{color:#777;font-size:13px;margin-bottom:18px;border-bottom:2px solid #47A2DA;padding-bottom:12px;}'+
-    '.cg-h{font-family:\'Instrument Serif\',serif;font-style:italic;font-size:20px;margin:20px 0 7px;}'+
-    '.cg-p{font-size:13.5px;line-height:1.6;margin:0 0 11px;color:#2a2a28;}'+
-    '.cg-note{background:#FFF7DA;border:1px solid #f0e3a8;border-radius:9px;padding:10px 13px;font-size:13px;line-height:1.5;margin:0 0 13px;}'+
-    '.cg-tablewrap{margin:0 0 15px;} .cg-table{border-collapse:collapse;width:100%;font-size:12.5px;}'+
-    '.cg-table th{background:#47A2DA;color:#fff;text-align:left;padding:7px 9px;} .cg-table td{border:1px solid #e6e4d8;padding:7px 9px;vertical-align:top;}'+
-    '.cg-table tr:nth-child(even) td{background:#faf9f3;}'+
-    '.pbar{position:fixed;top:0;left:0;right:0;background:#1D1D1B;color:#fff;padding:8px;text-align:center;font-size:13px;}'+
-    '.pbar button{background:#47A2DA;color:#fff;border:none;border-radius:7px;padding:6px 14px;font-family:inherit;cursor:pointer;margin-left:8px;}'+
-    '@media print{.pbar{display:none;} body{padding:0;}}'+
-    '</style></head><body>'+
-    '<div class="pbar">'+(sr?'Datoteka spremna':'Документ готов')+' <button onclick="window.print()">'+(sr?'Sačuvaj kao PDF':'Сохранить как PDF')+'</button></div>'+
-    '<div style="height:36px;"></div>'+
-    '<h1>'+esc(title)+'</h1><div class="brand">'+esc(brand)+'</div><div class="meta">'+meta+'</div>'+
-    body+
-    '<script>window.addEventListener(\'load\',function(){setTimeout(function(){window.print();},400);});<\/script>'+
-    '</body></html>';
+function careDocNode(pname,lang){
+  var wrap=document.createElement('div');
+  wrap.className='cg-doc';
+  wrap.style.cssText='position:fixed;left:-9999px;top:0;width:760px;background:#fff;padding:42px 46px;';
+  wrap.innerHTML=careDocInnerHtml(lang,pname,true);
+  return wrap;
 }
 function exportCarePDF(){
+  careEnsure();
   var pid=document.getElementById('careDocPartner').value;
   var lang=document.getElementById('careDocLang').value||'ru';
   var pname='';
   if(pid){var pp=(partners||[]).filter(function(x){return x.id===pid;})[0];if(pp)pname=pp.name;
     var pr=(profilesAdmin||{})[pid];if(pr&&pr.company)pname=pr.company;}
-  var w=window.open('','_blank');
-  if(!w){alert('Разрешите всплывающие окна, чтобы открыть документ для печати/PDF.');return;}
-  w.document.open();w.document.write(buildCareDocHtml(pname,lang));w.document.close();
+  if(!window.html2canvas||!(window.jspdf&&window.jspdf.jsPDF)){alert('Не загрузились библиотеки PDF. Проверьте интернет и обновите страницу.');return;}
+  var node=careDocNode(pname,lang);document.body.appendChild(node);
+  var btn=document.getElementById('careDocBtn');var oldT=btn?btn.textContent:'';if(btn){btn.disabled=true;btn.textContent='Готовим PDF…';}
+  function done(){document.body.removeChild(node);if(btn){btn.disabled=false;btn.textContent=oldT;}}
+  window.html2canvas(node,{scale:2,backgroundColor:'#ffffff',useCORS:true,windowWidth:node.scrollWidth}).then(function(canvas){
+    var jsPDF=window.jspdf.jsPDF;
+    var pdf=new jsPDF('p','mm','a4');
+    var pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
+    var fullH=canvas.height*pw/canvas.width;
+    if(fullH<=ph){pdf.addImage(canvas,'PNG',0,0,pw,fullH);}
+    else{
+      var sliceMaxPx=Math.floor(canvas.width*ph/pw);
+      var rendered=0,page=0;
+      while(rendered<canvas.height){
+        var sliceH=Math.min(sliceMaxPx,canvas.height-rendered);
+        var pc=document.createElement('canvas');pc.width=canvas.width;pc.height=sliceH;
+        pc.getContext('2d').drawImage(canvas,0,rendered,canvas.width,sliceH,0,0,canvas.width,sliceH);
+        if(page>0)pdf.addPage();
+        pdf.addImage(pc,'PNG',0,0,pw,sliceH*pw/canvas.width);
+        rendered+=sliceH;page++;
+      }
+    }
+    var fname='BreadVenture - '+(lang==='sr'?'Cuvanje i preporuke':'Hranenie i rekomendacii')+(pname?' - '+pname:'')+'.pdf';
+    pdf.save(fname);done();
+  }).catch(function(e){done();alert('Не удалось сформировать PDF: '+e);});
 }
 (function(){
   function on(id,fn){var el=document.getElementById(id);if(el)el.addEventListener('click',fn);}
