@@ -425,8 +425,8 @@ function renderOrders(){
         ext.forEach(function(cm){h+='<div style="font-size:13px;color:#55544c;padding:3px 0;">💬 '+esc(cm.text)+'</div>';});}
       if((o.docs||[]).length){h+='<div class="lbl" style="margin-top:10px;">'+(LANG==='sr'?'Dokumenti':'Документы')+'</div>';
         o.docs.forEach(function(dc){var dn=ORD_DOC_SR(dc.type);
-          h+='<div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px;"><span style="flex:1;">'+esc(dn)+(dc.title?' · '+esc(dc.title):'')+'</span>'+
-             (dc.url?'<a href="'+esc(dc.url)+'" target="_blank" rel="noopener" style="color:var(--blue-d);">'+(LANG==='sr'?'Otvori':'Открыть')+'</a>':'')+'</div>';});}
+          h+='<div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px;"><span style="flex:1;">'+esc(dn)+(dc.title?' · '+esc(dc.title):'')+(dc.name?' · <span style="color:var(--muted);">'+esc(dc.name)+'</span>':'')+'</span>'+
+             (dc.url?'<a href="'+esc(dc.url)+'" rel="noopener" style="color:var(--blue-d);font-weight:600;white-space:nowrap;">⬇ '+(LANG==='sr'?'Preuzmi':'Скачать')+'</a>':'')+'</div>';});}
       h+='</div>';
     }
     h+='<div class="obottom"><span class="ototal">'+(o.total!==''&&o.total!=null?fmt(o.total)+' '+cur():'')+'</span>'+
@@ -514,7 +514,7 @@ function renderDocs(){
     groups[t].forEach(function(d){var dt='';try{dt=new Date(d.created).toLocaleDateString('ru-RU');}catch(e){}
       h+='<div class="ocard" style="margin-bottom:9px;"><div class="top"><span style="font-weight:600;">'+esc(d.title||docType(t))+'</span>'+
          (d.version?'<span class="hint">v'+esc(d.version)+'</span>':'')+'<span class="hint" style="margin-left:auto;">'+esc(dt)+'</span></div>'+
-         (d.url?'<div style="margin-top:10px;"><a class="btn" href="'+esc(d.url)+'" target="_blank" rel="noopener" style="display:inline-block;padding:9px 18px;font-size:13.5px;text-decoration:none;">'+L('open')+'</a></div>':'<div class="hint" style="margin-top:6px;">Ссылка не указана</div>')+'</div>';
+         (d.url?'<div style="margin-top:10px;"><a class="btn" href="'+esc(d.url)+'" rel="noopener" style="display:inline-block;padding:9px 18px;font-size:13.5px;text-decoration:none;">⬇ '+(LANG==='sr'?'Preuzmi':'Скачать')+(d.name?' · '+esc(d.name):'')+'</a></div>':'<div class="hint" style="margin-top:6px;">'+(LANG==='sr'?'Datoteka nije priložena':'Файл не приложен')+'</div>')+'</div>';
     });
   });
   c.innerHTML=h;bindNav();

@@ -4208,7 +4208,7 @@
     </div>
     <div class="card">
       <div class="cat-title" style="margin-top:0;">Документы партнёров</div>
-      <p class="hint" style="margin-bottom:14px;">Привяжите документ к партнёру: счёт, накладную, условия, договор, сертификат или КП. Файл загрузите на Google Drive (доступ «по ссылке») и вставьте ссылку — партнёр увидит документ у себя и откроет его. Требуется подключённое облако.</p>
+      <p class="hint" style="margin-bottom:14px;">Привяжите документ к партнёру: счёт, накладную, условия, договор, сертификат или КП. Выберите файл (PDF, DOC, JPG) — он загрузится в вашу папку на Google Drive, а партнёр скачает сам файл у себя. Требуется подключённое облако.</p>
       <div class="grid3" style="margin-bottom:12px;">
         <div><label class="lbl">Партнёр</label><select class="inp" id="docPartner"></select></div>
         <div><label class="lbl">Тип</label><select class="inp" id="docType">
@@ -4218,7 +4218,7 @@
         <div><label class="lbl">Версия (необяз.)</label><input class="inp" id="docVer" placeholder="напр. 1"></div>
       </div>
       <div class="field" style="margin-top:0;"><label class="lbl">Название</label><input class="inp" id="docTitle" placeholder="Счёт №123 от …"></div>
-      <div class="field"><label class="lbl">Ссылка (Google Drive / URL)</label><input class="inp" id="docUrl" placeholder="https://drive.google.com/…" style="font-size:13px;"></div>
+      <div class="field"><label class="lbl">Файл (PDF, DOC, JPG, до 10 МБ)</label><input type="file" class="inp" id="docFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,application/pdf,image/*" style="font-size:13px;"></div>
       <div class="actions" style="margin-top:8px;"><button class="btn btn-primary btn-sm" id="docAddBtn">Добавить документ</button>
         <button class="btn btn-line btn-sm" id="docRefresh">Обновить список</button></div>
       <div id="docsView" style="margin-top:16px;"><div class="empty">Нажмите «Обновить список».</div></div>
@@ -5459,6 +5459,10 @@ function cloudOrderDoc(orderId,type,title,url){
   return fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
     body:JSON.stringify({master:MASTER,orderDoc:true,order_id:orderId,docType:type,docTitle:title,docUrl:url})}).then(function(r){return r.json();});
 }
+function cloudOrderDocUpload(orderId,type,title,fileName,mime,dataB64){
+  return fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify({master:MASTER,orderDocUpload:true,order_id:orderId,docType:type,docTitle:title,fileName:fileName,mime:mime,dataB64:dataB64})}).then(function(r){return r.json();});
+}
 function cloudOrderDocDel(orderId,ts){
   return fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
     body:JSON.stringify({master:MASTER,orderDocDel:true,order_id:orderId,docTs:ts})}).then(function(r){return r.json();});
@@ -5548,15 +5552,16 @@ function renderAdminOrders(){
       if((o.docs||[]).length){
         o.docs.forEach(function(dc){var dt2='';try{dt2=new Date(dc.ts).toLocaleDateString('ru-RU');}catch(e){}
           h+='<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;">'+
-             '<span style="flex:1;"><b>'+esc(ORD_DOC[dc.type]||dc.type)+'</b>'+(dc.title?' · '+esc(dc.title):'')+'</span>'+
-             (dc.url?'<a href="'+esc(dc.url)+'" target="_blank" rel="noopener" class="btn btn-line btn-sm" style="text-decoration:none;">Открыть</a>':'')+
+             '<span style="flex:1;"><b>'+esc(ORD_DOC[dc.type]||dc.type)+'</b>'+(dc.title?' · '+esc(dc.title):'')+(dc.name?' · <span class="hint">'+esc(dc.name)+'</span>':'')+'</span>'+
+             (dc.url?'<a href="'+esc(dc.url)+'" target="_blank" rel="noopener" class="btn btn-line btn-sm" style="text-decoration:none;">'+(dc.name?'⬇ Скачать':'Открыть')+'</a>':'')+
              '<button class="btn btn-line btn-sm danger od-del" data-ts="'+esc(dc.ts)+'">✕</button></div>';});
       }else h+='<div class="hint" style="margin-bottom:6px;">Документов пока нет. Predračun прикрепляют после подтверждения, отпремницу — после отгрузки.</div>';
       h+='<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:8px;align-items:center;">'+
          '<select class="inp od-type" style="width:auto;font-size:13px;padding:7px 10px;"><option value="predracun">Предсчёт (predračun)</option><option value="otpremnica">Отпремница</option><option value="invoice">Счёт</option><option value="other">Документ</option></select>'+
          '<input class="inp od-title" placeholder="Название (необяз.)" style="flex:1;min-width:120px;font-size:13px;">'+
-         '<input class="inp od-url" placeholder="https://drive.google.com/…" style="flex:2;min-width:160px;font-size:13px;">'+
-         '<button class="btn btn-primary btn-sm od-add">Прикрепить</button></div></div>';
+         '<input type="file" class="od-file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,application/pdf,image/*" style="flex:2;min-width:170px;font-size:12.5px;">'+
+         '<button class="btn btn-primary btn-sm od-add">Прикрепить</button></div>'+
+         '<div class="hint" style="margin-top:5px;">Выберите файл (PDF, DOC, JPG, PNG, до 10 МБ) — партнёр скачает сам файл, не ссылку.</div></div>';
       h+='</div>';
     }
     // строка статуса: смена по кнопке «Сохранить», а не сразу
@@ -5611,10 +5616,22 @@ function renderAdminOrders(){
     if(edit)edit.addEventListener('click',function(){editingOrder=id;editItems=(o.items||[]).map(function(x){return {name:x.name,weight:x.weight,uom:x.uom,qty:Number(x.qty)||0,_unit:(x.sum&&x.qty?x.sum/x.qty:0)};});renderAdminOrders();});
     var odAdd=card.querySelector('.od-add');
     if(odAdd)odAdd.addEventListener('click',function(){
-      var tp=card.querySelector('.od-type').value,ti=card.querySelector('.od-title').value.trim(),u=card.querySelector('.od-url').value.trim();
-      if(!u){toast('Вставьте ссылку на документ');return;}
-      odAdd.disabled=true;odAdd.textContent='…';
-      cloudOrderDoc(id,tp,ti,u).then(function(j){if(j&&j.ok){o.docs=(o.docs||[]).concat([{ts:new Date().toISOString(),type:tp,title:ti,url:u}]);toast('Документ прикреплён');renderAdminOrders();}else{toast('Не удалось');odAdd.disabled=false;odAdd.textContent='Прикрепить';}}).catch(function(){toast('Ошибка');odAdd.disabled=false;odAdd.textContent='Прикрепить';});});
+      var tp=card.querySelector('.od-type').value,ti=card.querySelector('.od-title').value.trim();
+      var fi=card.querySelector('.od-file'),file=fi&&fi.files&&fi.files[0];
+      if(!file){toast('Выберите файл (PDF, DOC, JPG)');return;}
+      if(file.size>10*1024*1024){toast('Файл больше 10 МБ — уменьшите');return;}
+      odAdd.disabled=true;odAdd.textContent='Загрузка…';
+      var rd=new FileReader();
+      rd.onload=function(){
+        var b64=String(rd.result||'');var ix=b64.indexOf('base64,');if(ix>=0)b64=b64.substring(ix+7);
+        cloudOrderDocUpload(id,tp,ti,file.name,file.type,b64).then(function(j){
+          if(j&&j.ok&&j.doc){o.docs=(o.docs||[]).concat([j.doc]);toast('Файл прикреплён');renderAdminOrders();}
+          else{toast(j&&j.error==='auth'?'Нет доступа к Drive — переразверните Code.gs':'Не удалось загрузить');odAdd.disabled=false;odAdd.textContent='Прикрепить';}
+        }).catch(function(){toast('Ошибка соединения');odAdd.disabled=false;odAdd.textContent='Прикрепить';});
+      };
+      rd.onerror=function(){toast('Не удалось прочитать файл');odAdd.disabled=false;odAdd.textContent='Прикрепить';};
+      rd.readAsDataURL(file);
+    });
     card.querySelectorAll('.od-del').forEach(function(b){b.addEventListener('click',function(){
       var ts=this.dataset.ts;cloudOrderDocDel(id,ts).then(function(j){if(j&&j.ok){o.docs=(o.docs||[]).filter(function(d){return d.ts!==ts;});renderAdminOrders();}else toast('Не удалось');}).catch(function(){toast('Ошибка');});});});
     var ci=card.querySelector('.c-int'),ce=card.querySelector('.c-ext'),ct=card.querySelector('.c-text');
@@ -5790,7 +5807,7 @@ function renderDocsAdmin(){
     byP[pid].forEach(function(d){var dt='';try{dt=new Date(d.created).toLocaleDateString('ru-RU');}catch(e){}
       h+='<div class="row" style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:11px;padding:10px 13px;margin-bottom:8px;flex-wrap:wrap;" data-id="'+esc(d.id)+'">'+
          '<div style="flex:1;min-width:150px;"><b>'+esc(d.title||DOC_TLBL[d.type]||'Документ')+'</b> <span class="hint">· '+esc(DOC_TLBL[d.type]||d.type)+(d.version?' · v'+esc(d.version):'')+' · '+esc(dt)+'</span></div>'+
-         (d.url?'<a class="btn btn-line btn-sm" href="'+esc(d.url)+'" target="_blank" rel="noopener">Открыть</a>':'')+
+         (d.url?'<a class="btn btn-line btn-sm" href="'+esc(d.url)+'" target="_blank" rel="noopener">'+(d.name?'⬇ Скачать':'Открыть')+'</a>':'')+
          '<button class="btn btn-line btn-sm danger d-arch">Убрать</button></div>';
     });
   });
@@ -5818,18 +5835,25 @@ var _da=document.getElementById('docAddBtn');if(_da)_da.addEventListener('click'
   var pid=document.getElementById('docPartner').value;
   var type=document.getElementById('docType').value;
   var title=document.getElementById('docTitle').value.trim();
-  var url=document.getElementById('docUrl').value.trim();
   var ver=document.getElementById('docVer').value.trim();
+  var fi=document.getElementById('docFile'),file=fi&&fi.files&&fi.files[0];
   if(!pid){toast('Нет партнёров — сначала заведите партнёра');return;}
-  if(!title){toast('Введите название документа');return;}
-  var doc={partner_id:pid,type:type,title:title,url:url,version:ver};
-  _da.disabled=true;
-  fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({master:MASTER,docAdd:doc})})
-    .then(function(r){return r.json();}).then(function(j){_da.disabled=false;
-      if(j&&j.ok){if(j.doc)documentsAdmin.push(j.doc);renderDocsAdmin();
-        document.getElementById('docTitle').value='';document.getElementById('docUrl').value='';document.getElementById('docVer').value='';
-        toast('Документ добавлен');}else toast('Не удалось добавить');
-    }).catch(function(){_da.disabled=false;toast('Ошибка соединения');});
+  if(!file){toast('Выберите файл (PDF, DOC, JPG)');return;}
+  if(file.size>10*1024*1024){toast('Файл больше 10 МБ — уменьшите');return;}
+  if(!title)title=file.name;
+  _da.disabled=true;_da.textContent='Загрузка…';
+  var rd=new FileReader();
+  rd.onload=function(){
+    var b64=String(rd.result||'');var ix=b64.indexOf('base64,');if(ix>=0)b64=b64.substring(ix+7);
+    fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({master:MASTER,docUpload:true,partner_id:pid,type:type,title:title,version:ver,fileName:file.name,mime:file.type,dataB64:b64})})
+      .then(function(r){return r.json();}).then(function(j){_da.disabled=false;_da.textContent='Добавить документ';
+        if(j&&j.ok){if(j.doc)documentsAdmin.push(j.doc);renderDocsAdmin();
+          document.getElementById('docTitle').value='';if(document.getElementById('docFile'))document.getElementById('docFile').value='';document.getElementById('docVer').value='';
+          toast('Документ добавлен');}else toast(j&&j.error==='auth'?'Нет доступа к Drive — переразверните Code.gs':'Не удалось добавить');
+      }).catch(function(){_da.disabled=false;_da.textContent='Добавить документ';toast('Ошибка соединения');});
+  };
+  rd.onerror=function(){_da.disabled=false;_da.textContent='Добавить документ';toast('Не удалось прочитать файл');};
+  rd.readAsDataURL(file);
 });
 document.querySelector('.tab[data-tab="partners"]').addEventListener('click',function(){fillDocPartners();});
 
