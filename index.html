@@ -339,7 +339,12 @@
   .care-colors{display:flex;gap:7px;margin-top:9px;}
   .cc-sw{width:24px;height:24px;border-radius:50%;border:2px solid;cursor:pointer;padding:0;}
   .cc-sw.on{box-shadow:0 0 0 2px #fff,0 0 0 4px #1D1D1B;}
-  .care-preview{border:1px solid var(--line);border-radius:14px;padding:26px 28px;background:#fff;}
+  .cg-card{background:#fff;border:1px solid #e9e7db;border-radius:14px;padding:20px 22px;margin-bottom:14px;}
+  .cg-card .cg-h:first-child,.cg-card .cg-p:first-child,.cg-card .cg-note:first-child{margin-top:0;}
+  .cg-card>*:last-child{margin-bottom:0;}
+  .cg-foot{background:transparent;border:none;padding:4px 6px 0;margin-bottom:0;}
+  .cg-foot .cg-p{font-size:12.5px;color:#8a8980;margin:0;}
+  .care-preview{border:1px solid var(--line);border-radius:14px;padding:24px 22px;background:#F4F3E9;}
 </style>
 </head>
 <body>
@@ -5927,18 +5932,19 @@ var DEFAULT_STORAGE={blocks:[
 function careTypeLabel(t){return t==='h'?'Заголовок':t==='table'?'Таблица':t==='note'?'Выделение':'Текст';}
 function careBlocksHtml(blocks,lang){
   if(!blocks||!blocks.length)return '';
+  function tx(b){return (b.t&&b.t[lang])||'';}
+  function nl(s){return s.replace(/\n/g,'<br>');}
+  function cell(b){
+    if(b.type==='h')return '<h3 class="cg-h">'+esc(tx(b))+'</h3>';
+    if(b.type==='note'){var c=CARE_COLORS[b.color||'yellow']||CARE_COLORS.yellow;return '<div class="cg-note" style="background:'+c.bg+';border-color:'+c.bd+';color:'+c.fg+';">'+nl(esc(tx(b)))+'</div>';}
+    if(b.type==='table'){var t=(b.t&&b.t[lang])||[];if(!t.length)return '';var s='<div class="cg-tablewrap"><table class="cg-table">';t.forEach(function(row,ri){s+='<tr>';row.forEach(function(cl){var tag=ri===0?'th':'td';s+='<'+tag+'>'+nl(esc(cl||''))+'</'+tag+'>';});s+='</tr>';});return s+'</table></div>';}
+    return '<p class="cg-p">'+nl(esc(tx(b)))+'</p>';
+  }
+  var secs=[],cur=null;
+  blocks.forEach(function(b){if(b.type==='h'){cur={blocks:[b]};secs.push(cur);}else{if(!cur){cur={blocks:[]};secs.push(cur);}cur.blocks.push(b);}});
+  if(secs.length){var L=secs[secs.length-1];if(L.blocks.length>1){var lastb=L.blocks[L.blocks.length-1];if(lastb.type==='p'){L.blocks.pop();secs.push({blocks:[lastb],footer:true});}}}
   var h='';
-  blocks.forEach(function(b){
-    if(b.type==='h')h+='<h3 class="cg-h">'+esc((b.t&&b.t[lang])||'')+'</h3>';
-    else if(b.type==='note'){var col=CARE_COLORS[b.color||'yellow']||CARE_COLORS.yellow;
-      h+='<div class="cg-note" style="background:'+col.bg+';border-color:'+col.bd+';color:'+col.fg+';">'+esc((b.t&&b.t[lang])||'').replace(/\n/g,'<br>')+'</div>';}
-    else if(b.type==='table'){
-      var t=(b.t&&b.t[lang])||[];
-      if(t.length){h+='<div class="cg-tablewrap"><table class="cg-table">';
-        t.forEach(function(row,ri){h+='<tr>';row.forEach(function(cell){var tag=ri===0?'th':'td';h+='<'+tag+'>'+esc(cell||'').replace(/\n/g,'<br>')+'</'+tag+'>';});h+='</tr>';});
-        h+='</table></div>';}
-    }else h+='<p class="cg-p">'+esc((b.t&&b.t[lang])||'').replace(/\n/g,'<br>')+'</p>';
-  });
+  secs.forEach(function(s){var inner='';s.blocks.forEach(function(b){inner+=cell(b);});h+='<div class="cg-card'+(s.footer?' cg-foot':'')+'">'+inner+'</div>';});
   return h;
 }
 function careEnsure(){if(!storageData||!Array.isArray(storageData.blocks))storageData=JSON.parse(JSON.stringify(DEFAULT_STORAGE));storageData.blocks=storageData.blocks||[];}
@@ -6049,7 +6055,7 @@ function fillCareDocPartners(){
 function careDocNode(pname,lang){
   var wrap=document.createElement('div');
   wrap.className='cg-doc';
-  wrap.style.cssText='position:fixed;left:-9999px;top:0;width:760px;background:#fff;padding:42px 46px;';
+  wrap.style.cssText='position:fixed;left:-9999px;top:0;width:760px;background:#F4F3E9;padding:38px 34px;';
   wrap.innerHTML=careDocInnerHtml(lang,pname,true);
   return wrap;
 }
@@ -6063,28 +6069,40 @@ function exportCarePDF(){
   if(!window.html2canvas||!(window.jspdf&&window.jspdf.jsPDF)){alert('Не загрузились библиотеки PDF. Проверьте интернет и обновите страницу.');return;}
   var node=careDocNode(pname,lang);document.body.appendChild(node);
   var btn=document.getElementById('careDocBtn');var oldT=btn?btn.textContent:'';if(btn){btn.disabled=true;btn.textContent='Готовим PDF…';}
-  function done(){document.body.removeChild(node);if(btn){btn.disabled=false;btn.textContent=oldT;}}
-  window.html2canvas(node,{scale:2,backgroundColor:'#ffffff',useCORS:true,windowWidth:node.scrollWidth}).then(function(canvas){
-    var jsPDF=window.jspdf.jsPDF;
-    var pdf=new jsPDF('p','mm','a4');
-    var pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
-    var fullH=canvas.height*pw/canvas.width;
-    if(fullH<=ph){pdf.addImage(canvas,'PNG',0,0,pw,fullH);}
-    else{
-      var sliceMaxPx=Math.floor(canvas.width*ph/pw);
-      var rendered=0,page=0;
-      while(rendered<canvas.height){
-        var sliceH=Math.min(sliceMaxPx,canvas.height-rendered);
-        var pc=document.createElement('canvas');pc.width=canvas.width;pc.height=sliceH;
-        pc.getContext('2d').drawImage(canvas,0,rendered,canvas.width,sliceH,0,0,canvas.width,sliceH);
-        if(page>0)pdf.addPage();
-        pdf.addImage(pc,'PNG',0,0,pw,sliceH*pw/canvas.width);
-        rendered+=sliceH;page++;
+  function done(){if(node.parentNode)node.parentNode.removeChild(node);if(btn){btn.disabled=false;btn.textContent=oldT;}}
+  function go(){
+    var scale=2;
+    window.html2canvas(node,{scale:scale,backgroundColor:'#F4F3E9',useCORS:true,windowWidth:node.scrollWidth}).then(function(canvas){
+      var jsPDF=window.jspdf.jsPDF;
+      var pdf=new jsPDF('p','mm','a4');
+      var pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
+      var pxPerMm=canvas.width/pw, pageHpx=ph*pxPerMm;
+      var nodeTop=node.getBoundingClientRect().top, breaks=[];
+      node.querySelectorAll('.cg-card').forEach(function(c){var r=c.getBoundingClientRect();breaks.push(Math.round((r.bottom-nodeTop)*scale));});
+      breaks.push(canvas.height);breaks.sort(function(a,b){return a-b;});
+      var startY=0,first=true,guard=0;
+      while(startY<canvas.height-1&&guard<80){
+        guard++;
+        var limit=startY+pageHpx,endY=0,i;
+        for(i=0;i<breaks.length;i++){if(breaks[i]>startY+4&&breaks[i]<=limit&&breaks[i]>endY)endY=breaks[i];}
+        if(endY===0)endY=Math.min(limit,canvas.height);
+        var sliceH=endY-startY;
+        var pc=document.createElement('canvas');pc.width=canvas.width;pc.height=Math.round(sliceH);
+        var ctx=pc.getContext('2d');ctx.fillStyle='#F4F3E9';ctx.fillRect(0,0,pc.width,pc.height);
+        ctx.drawImage(canvas,0,startY,canvas.width,sliceH,0,0,canvas.width,sliceH);
+        if(!first)pdf.addPage();
+        pdf.setFillColor(244,243,233);pdf.rect(0,0,pw,ph,'F');
+        pdf.addImage(pc,'PNG',0,0,pw,sliceH/pxPerMm);
+        first=false;startY=endY;
       }
-    }
-    var fname='BreadVenture - '+(lang==='sr'?'Cuvanje i preporuke':'Hranenie i rekomendacii')+(pname?' - '+pname:'')+'.pdf';
-    pdf.save(fname);done();
-  }).catch(function(e){done();alert('Не удалось сформировать PDF: '+e);});
+      var fname='BreadVenture - '+(lang==='sr'?'Cuvanje i preporuke':'Hranenie i rekomendacii')+(pname?' - '+pname:'')+'.pdf';
+      pdf.save(fname);done();
+    }).catch(function(e){done();alert('Не удалось сформировать PDF: '+e);});
+  }
+  if(document.fonts&&document.fonts.load){
+    Promise.all([document.fonts.load("italic 30px 'Instrument Serif'"),document.fonts.load("700 16px 'Wix Madefor Text'"),document.fonts.load("400 14px 'Wix Madefor Text'")])
+      .then(function(){return document.fonts.ready;}).then(function(){setTimeout(go,60);}).catch(go);
+  }else setTimeout(go,60);
 }
 (function(){
   function on(id,fn){var el=document.getElementById(id);if(el)el.addEventListener('click',fn);}
