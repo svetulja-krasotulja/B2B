@@ -20,8 +20,8 @@
   .lang-sw{display:inline-flex;gap:2px;border:1px solid var(--line);border-radius:8px;overflow:hidden;vertical-align:middle;}
   .lang-sw .lng{padding:2px 8px;font-size:12px;font-weight:600;color:var(--muted);background:#fff;}
   .lang-sw .lng.on{background:var(--blue);color:#fff;}
-  nav{display:flex;gap:8px;margin:16px 0 6px;}
-  nav button{flex:1;border:1px solid var(--line);background:#fff;border-radius:11px;padding:11px;font-family:inherit;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;}
+  nav{display:flex;gap:8px;margin:16px 0 6px;flex-wrap:wrap;}
+  nav button{flex:1 1 84px;min-width:84px;border:1px solid var(--line);background:#fff;border-radius:11px;padding:11px;font-family:inherit;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;}
   nav button.on{background:var(--dark);color:#fff;border-color:var(--dark);}
   .note{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 15px;font-size:13px;color:#55544c;margin:14px 0;}
   .sec-title{font-family:'Instrument Serif',serif;font-style:italic;font-size:21px;margin:22px 0 10px;}
@@ -127,6 +127,7 @@ var PDV_DEFAULT=10, FREE_FROM=7000, MIN_DELIVERY=2500, DELIVERY=350;
 var catalog=[], qtyMap={}, pickup=false, CODE='', PARTNER='', ORDERS=[], DOCS=[], TERMS=[], FOOT={}, CATSR={}, VIEW='new', openOrder='';
 var SUBS=[], subQty={}, subEditId='', subDays=[];
 var POINTS=[], selPoint='';
+var deliveries=[], PROFILE={}, ANNOUNCE={};
 var LANG='ru';try{LANG=localStorage.getItem('bv_partner_lang')||'ru';}catch(e){}
 var HOLIDAYS=[];var HOLIDAY_RAW=[];var LEAD_DAYS=2;
 try{CODE=localStorage.getItem('bv_partner_code')||'';}catch(e){}
@@ -235,19 +236,20 @@ function setView(v){VIEW=v;
   document.getElementById('logout').addEventListener('click',logout);
   var _tag=document.querySelector('.tag');if(_tag)_tag.textContent=(LANG==='sr'?'BreadVenture · zanatska pekara · Beograd':'BreadVenture · ремесленная пекарня · Белград');
   document.querySelectorAll('.lng').forEach(function(a){a.addEventListener('click',function(){LANG=this.dataset.l;try{localStorage.setItem('bv_partner_lang',LANG);}catch(e){}setView(VIEW);});});
-  if(v==='new')renderNew();else if(v==='orders')renderOrders();else if(v==='subs')renderSubs();else if(v==='points')renderPoints();else if(v==='docs')renderDocs();else if(v==='price')renderPriceList();else renderTerms();
+  if(v==='new')renderNew();else if(v==='orders')renderOrders();else if(v==='subs')renderSubs();else if(v==='points')renderPoints();else if(v==='me')renderMe();else if(v==='docs')renderDocs();else if(v==='price')renderPriceList();else renderTerms();
 }
 function navHtml(active){
   return '<nav><button data-v="new" class="'+(active==='new'?'on':'')+'">'+L('neworder')+'</button>'+
          '<button data-v="orders" class="'+(active==='orders'?'on':'')+'">'+L('myorders')+(ORDERS.length?' ('+ORDERS.length+')':'')+'</button>'+
          '<button data-v="subs" class="'+(active==='subs'?'on':'')+'">'+(LANG==='sr'?'Redovno':'Регулярно')+(pendingCount()?' •'+pendingCount():'')+'</button>'+
          '<button data-v="points" class="'+(active==='points'?'on':'')+'">'+(LANG==='sr'?'Adrese':'Адреса')+(POINTS.length?' ('+POINTS.length+')':'')+'</button>'+
+         '<button data-v="me" class="'+(active==='me'?'on':'')+'">'+(LANG==='sr'?'Moji podaci':'Мои данные')+'</button>'+
          '<button data-v="docs" class="'+(active==='docs'?'on':'')+'">'+L('docs')+(DOCS.length?' ('+DOCS.length+')':'')+'</button>'+
          '<button data-v="price" class="'+(active==='price'?'on':'')+'">'+L('pricetab')+'</button>'+
          '<button data-v="info" class="'+(active==='info'?'on':'')+'">'+L('info')+'</button></nav>';
 }
 function bindNav(){document.querySelectorAll('nav button').forEach(function(b){b.addEventListener('click',function(){setView(this.dataset.v);});});}
-function logout(){try{localStorage.removeItem('bv_partner_code');}catch(e){}CODE='';PARTNER='';catalog=[];ORDERS=[];qtyMap={};
+function logout(){try{localStorage.removeItem('bv_partner_code');}catch(e){}CODE='';PARTNER='';catalog=[];ORDERS=[];qtyMap={};deliveries=[];PROFILE={};
   document.getElementById('who').style.display='none';document.getElementById('bar').style.display='none';showLogin();}
 
 /* ---------- новый заказ ---------- */
@@ -257,6 +259,7 @@ function renderNew(){
   if(!catalog.length){c.innerHTML=navHtml('new')+'<div class="empty">Прайс пока не заполнен. Свяжитесь с пекарней.</div>';bindNav();document.getElementById('bar').style.display='none';return;}
   var h=navHtml('new');
   h+='<div class="note">'+(LANG==='sr'?'Izaberite stavke i količinu, navedite datum isporuke — dole će se prikazati ukupan iznos. Cene su sa PDV; popust po količini se računa automatski. Dostava po Beogradu 350 din. (besplatno od 7000 din. bez PDV), ispod 2500 din. — samo preuzimanje. Porudžbina najkasnije 48h pre isporuke, nedeljom se ne isporučuje.':'Выберите позиции и количество, укажите дату доставки — внизу появится итог. Цены с учётом PDV; скидка по объёму считается автоматически. Доставка по Белграду 350 дин. (бесплатно от 7000 дин. без PDV), менее 2500 дин. — только самовывоз. Заказ не позднее 48 ч до поставки, по воскресеньям отгрузки нет.')+'</div>';
+  h+=announceBannerHtml();
   h+=holidayBannerHtml();
   if(pendingCount()){h+='<div class="holiday-banner" style="background:#E8F4FC;border-color:#9fcdeb;color:#1a5a85;cursor:pointer;" id="subRemind">🔁 '+(LANG==='sr'?('Imate isporuke koje čekaju potvrdu ('+pendingCount()+'). Otvorite „Redovno".'):('Есть регулярные поставки, ожидающие подтверждения ('+pendingCount()+'). Откройте «Регулярно».'))+'</div>';}
   catList().forEach(function(cat){
@@ -290,16 +293,18 @@ function renderNew(){
        '<div class="field" style="flex:1;min-width:150px;"><label class="lbl">'+L('ddate')+' <span class="req">*</span></label><input class="inp" id="fDate" type="date"><div class="hint" id="dateHint"></div></div>'+
        '<div class="field" style="flex:1;min-width:120px;"><label class="lbl">'+L('dtime')+'</label><select class="inp" id="fTime">'+timeSlotOptions('')+'</select><div class="hint" style="margin-top:4px;">'+(LANG==='sr'?'8:00–16:00. Drugo vreme — upišite u komentar, potvrdićemo.':'8:00–16:00. Другое время — впишите в комментарий, мы согласуем.')+'</div></div>'+
      '</div>'+
-     '<div class="chk" id="fPickup"><span class="box"></span><span>'+L('pickup')+'</span></div>'+
      '<div class="field" style="margin-top:13px;"><label class="lbl">'+L('comment')+'</label><textarea class="inp" id="fComment"></textarea></div>'+
      '<div class="hint" style="margin-top:8px;">'+(LANG==='sr'?'Podaci se pamte iz prethodne porudžbine — proverite i po potrebi izmenite.':'Данные подставляются из прошлого заказа — проверьте и при необходимости измените.')+'</div>'+
      '</div>';
+  h+=stagedPanelHtml();
+  h+='<button class="btn btn-line" id="addDeliv" style="width:100%;margin-top:10px;">+ '+(LANG==='sr'?'Dodaj još jednu adresu':'Добавить ещё адрес')+'</button>';
+  h+='<p class="hint" style="margin-top:6px;text-align:center;">'+(LANG==='sr'?'Možete poslati jednu porudžbinu na više adresa.':'Можно отправить один заказ на несколько адресов.')+'</p>';
   c.innerHTML=h;bindNav();bindRows();
+  var _ad=document.getElementById('addDeliv');if(_ad)_ad.addEventListener('click',addDelivery);
+  document.querySelectorAll('.del-deliv').forEach(function(b){b.addEventListener('click',function(){var i=Number(this.dataset.i);if(i>=0&&i<deliveries.length){deliveries.splice(i,1);renderNew();}});});
   var _sr=document.getElementById('subRemind');if(_sr)_sr.addEventListener('click',function(){setView('subs');});
   var na=nextAvailable();document.getElementById('fDate').min=ymd(na);
   document.getElementById('dateHint').textContent=L('earliest')+': '+fmtDate(na)+'. '+L('cutoff')+' '+L('sundayoff');
-  document.getElementById('fPickup').classList.toggle('on',pickup);
-  document.getElementById('fPickup').addEventListener('click',function(){pickup=!pickup;this.classList.toggle('on',pickup);renderTotals();});
   var fp=document.getElementById('fPoint');
   if(fp){fp.addEventListener('change',function(){selPoint=this.value;
     var w=document.getElementById('fAddrWrap');if(w)w.style.display=(this.value==='__new')?'block':'none';
@@ -356,16 +361,25 @@ function renderTotals(){
     else d='<div class="deliv pay"><span>🚲</span><div>'+(sd?'Dostava 350 din. Do besplatne nedostaje '+fmt(FREE_FROM-c.net)+' din. (bez PDV).':'Доставка 350 дин. До бесплатной не хватает '+fmt(FREE_FROM-c.net)+' дин. (без PDV).')+'</div></div>';
     w.innerHTML=lst+t+d;
   }else w.innerHTML='';
-  document.getElementById('barSum').textContent=fmt(c.grand)+' '+cur();
-  document.getElementById('barSub').textContent=c.count>0?(function(){
-    var sr=(LANG==='sr'),dm;
-    if(c.mode==='pickup'||c.mode==='need')dm=(sr?'preuzimanje':'самовывоз');
-    else if(c.mode==='free')dm=(sr?'besplatna dostava':'бесплатная доставка');
-    else dm=(sr?'dostava ':'доставка ')+fmt(c.delivery)+' '+cur()+(c.net<FREE_FROM?(sr?' · do besplatne '+fmt(FREE_FROM-c.net)+' din.':' · до бесплатной '+fmt(FREE_FROM-c.net)+' дин.'):'');
-    return c.count+' '+L('pos')+' · '+dm;
-  })():L('pick');
-  var _sb=document.getElementById('sendBtn');if(_sb&&!_sb.disabled&&_sb.textContent.indexOf('…')<0)_sb.textContent=L('submit');
-  document.getElementById('sendBtn').disabled=c.count<1;
+  var stagedTotal=0;deliveries.forEach(function(d){stagedTotal+=Number(d.total)||0;});
+  var addrCount=deliveries.length+(c.count>0?1:0);
+  var grandAll=(c.count>0?c.grand:0)+stagedTotal;
+  document.getElementById('barSum').textContent=fmt(grandAll)+' '+cur();
+  if(deliveries.length){
+    var srB=(LANG==='sr');
+    document.getElementById('barSub').textContent=(srB?(addrCount+' adr.'):(addrCount+' адр.'))+(c.count<1?(srB?' · dodajte stavke ili pošaljite':' · добавьте позиции или отправьте'):(srB?(' · '+c.count+' stavki za novu'):(' · '+c.count+' поз. на новый')));
+  }else{
+    document.getElementById('barSub').textContent=c.count>0?(function(){
+      var sr=(LANG==='sr'),dm;
+      if(c.mode==='pickup'||c.mode==='need')dm=(sr?'preuzimanje':'самовывоз');
+      else if(c.mode==='free')dm=(sr?'besplatna dostava':'бесплатная доставка');
+      else dm=(sr?'dostava ':'доставка ')+fmt(c.delivery)+' '+cur()+(c.net<FREE_FROM?(sr?' · do besplatne '+fmt(FREE_FROM-c.net)+' din.':' · до бесплатной '+fmt(FREE_FROM-c.net)+' дин.'):'');
+      return c.count+' '+L('pos')+' · '+dm;
+    })():L('pick');
+  }
+  var _sb=document.getElementById('sendBtn');
+  if(_sb&&!_sb.disabled&&_sb.textContent.indexOf('…')<0)_sb.textContent=(addrCount>1?L('submit')+' ('+addrCount+')':L('submit'));
+  document.getElementById('sendBtn').disabled=(c.count<1&&deliveries.length<1);
   document.getElementById('bar').style.display=(VIEW==='new')?'block':'none';
 }
 
@@ -491,7 +505,7 @@ function renderDocs(){
 }
 function repeatOrder(orderId){
   var o=null;ORDERS.forEach(function(x){if(x.order_id===orderId)o=x;});if(!o)return;
-  qtyMap={};var missing=0;
+  qtyMap={};deliveries=[];var missing=0;
   (o.items||[]).forEach(function(it){var found=itemByNameWeight(it.name,it.weight);if(found)qtyMap[found.id]=Math.max(0,Number(it.qty)||0);else missing++;});
   setView('new');
   if(missing)alert('Часть позиций из того заказа сейчас недоступна и не добавлена ('+missing+'). Остальное перенесено в новый заказ.');
@@ -499,34 +513,74 @@ function repeatOrder(orderId){
 
 /* ---------- отправка заказа ---------- */
 function pointById(id){for(var i=0;i<POINTS.length;i++)if(POINTS[i].id===id)return POINTS[i];return null;}
-function sendOrder(){
-  var c=compute();if(c.count<1)return;
+function currentItems(){var items=[];catalog.forEach(function(it){var q=Math.max(0,Number(qtyMap[it.id])||0);if(!q)return;
+    var disc=discountFor(it,q),unit=it.retail*(1-disc/100);
+    items.push({name:it.name,weight:it.weight,qty:q,uom:itemUnit(it),sum:Math.round(unit*q*100)/100});});return items;}
+function getDeliveryFields(){
   var contact=document.getElementById('fContact').value.trim();
   var phone=document.getElementById('fPhone').value.trim();
+  if(!contact||!phone){alert(LANG==='sr'?'Popunite kontakt osobu i telefon.':'Заполните контактное лицо и телефон.');return null;}
   var pt=(selPoint&&selPoint!=='__new')?pointById(selPoint):null;
   var faEl=document.getElementById('fAddr');
   var addr=pt?((pt.name?pt.name+', ':'')+pt.address):(faEl?faEl.value.trim():'');
-  if(!contact||!phone){alert(LANG==='sr'?'Popunite kontakt osobu i telefon.':'Заполните контактное лицо и телефон.');return;}
   try{localStorage.setItem('bv_p_contact',contact);localStorage.setItem('bv_p_phone',phone);localStorage.setItem('bv_p_addr',addr);}catch(e){}
-  if(!pickup&&!addr){alert(L('needaddr'));return;}
+  var c=compute();
+  if(c.mode!=='need'&&c.mode!=='pickup'&&!addr){alert(L('needaddr'));return null;}
   var date=document.getElementById('fDate').value;
-  var time=document.getElementById('fTime').value;
-  if(!date){alert(L('needdate'));return;}
+  if(!date){alert(L('needdate'));return null;}
   var dd=new Date(date+'T00:00:00');
   if(isBlockedDate(dd)){var na=nextAvailable();
     var why=isSunday(dd)?L('sundayoff'):(isHoliday(dd)?(LANG==='sr'?'Taj dan je neradni.':'Этот день нерабочий.'):L('cutoff'));
     alert(L('blocked')+' '+why+'\n\n'+L('nearest')+': '+fmtDate(na));
-    document.getElementById('fDate').value=ymd(na);return;}
-  var comment=document.getElementById('fComment').value.trim();if(pickup)comment=(comment?comment+' · ':'')+'Самовывоз';
-  var items=[];catalog.forEach(function(it){var q=Math.max(0,Number(qtyMap[it.id])||0);if(!q)return;
-    var disc=discountFor(it,q),unit=it.retail*(1-disc/100);
-    items.push({name:it.name,weight:it.weight,qty:q,uom:itemUnit(it),sum:Math.round(unit*q*100)/100});});
-  var order={contact:contact,phone:phone,address:addr,time:time||'',date:date?new Date(date).toLocaleDateString('ru-RU'):'не указана',
-    comment:comment,items:items,total:Math.round(c.grand*100)/100};
+    document.getElementById('fDate').value=ymd(na);return null;}
+  var time=document.getElementById('fTime').value;
+  var comment=document.getElementById('fComment').value.trim();
+  if(c.mode==='need'||c.mode==='pickup')comment=(comment?comment+' · ':'')+'Самовывоз';
+  return {contact:contact,phone:phone,addr:addr,time:time||'',
+    date:date?new Date(date).toLocaleDateString('ru-RU'):'не указана',comment:comment,
+    items:currentItems(),total:Math.round(c.grand*100)/100};
+}
+function addDelivery(){
+  var c=compute();
+  if(c.count<1){alert(LANG==='sr'?'Dodajte stavke za ovu adresu.':'Добавьте позиции для этого адреса.');return;}
+  var f=getDeliveryFields();if(!f)return;
+  deliveries.push({address:f.addr,date:f.date,time:f.time,comment:f.comment,items:f.items,total:f.total});
+  var copy=confirm(LANG==='sr'?'Adresa je dodata. Kopirati iste stavke u sledeću adresu?':'Адрес добавлен. Скопировать те же позиции в следующий адрес?');
+  if(!copy)qtyMap={};
+  selPoint='';
+  renderNew();
+  toast2(LANG==='sr'?'Adresa dodata':'Адрес добавлен');
+}
+function stagedPanelHtml(){
+  if(!deliveries.length)return '';
+  var sr=(LANG==='sr');
+  var h='<div class="sec-title">'+(sr?('Adrese u ovoj porudžbini ('+deliveries.length+')'):('Адреса в этом заказе ('+deliveries.length+')'))+'</div>';
+  deliveries.forEach(function(d,i){
+    h+='<div class="ocard" style="margin-bottom:9px;"><div class="top"><span style="font-weight:600;">📍 '+esc(d.address||(sr?'Preuzimanje':'Самовывоз'))+'</span>'+
+       '<span class="odate" style="margin-left:auto;">'+esc(d.date||'')+(d.time?', '+esc(d.time):'')+'</span></div>'+
+       '<div class="hint" style="margin-top:4px;">'+(d.items||[]).length+' '+(sr?'stavki':'поз.')+' · '+fmt(d.total)+' '+cur()+'</div>'+
+       '<div style="margin-top:9px;"><button class="btn btn-line del-deliv" data-i="'+i+'" style="padding:7px 13px;font-size:13px;color:#b3261e;">'+(sr?'Ukloni adresu':'Удалить адрес')+'</button></div></div>';
+  });
+  return h;
+}
+function sendOrder(){
+  var c=compute();
+  if(c.count<1&&!deliveries.length)return;
+  var contact=document.getElementById('fContact').value.trim();
+  var phone=document.getElementById('fPhone').value.trim();
+  if(!contact||!phone){alert(LANG==='sr'?'Popunite kontakt osobu i telefon.':'Заполните контактное лицо и телефон.');return;}
+  var ordersArr=[];
+  deliveries.forEach(function(d){ordersArr.push({contact:contact,phone:phone,address:d.address,time:d.time,date:d.date,comment:d.comment,items:d.items,total:d.total});});
+  if(c.count>0){
+    var f=getDeliveryFields();if(!f)return;
+    ordersArr.push({contact:contact,phone:phone,address:f.addr,time:f.time,date:f.date,comment:f.comment,items:f.items,total:f.total});
+  }
+  if(!ordersArr.length){alert(LANG==='sr'?'Dodajte stavke.':'Добавьте позиции.');return;}
   var btn=document.getElementById('sendBtn');btn.disabled=true;btn.textContent=(LANG==='sr'?'Šaljemo…':'Отправляем…');
-  fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({order:order,code:CODE})})
+  var body=(ordersArr.length===1)?{order:ordersArr[0],code:CODE}:{orderBatch:ordersArr,code:CODE};
+  fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)})
     .then(function(r){return r.json();})
-    .then(function(j){if(j&&j.ok){qtyMap={};refreshOrders(function(){showOk(j.order_id);});}else throw 'err';})
+    .then(function(j){if(j&&j.ok){qtyMap={};deliveries=[];refreshOrders(function(){showOk(j.order_id||(j.order_ids&&j.order_ids.join(', '))||'');});}else throw 'err';})
     .catch(function(){alert(LANG==='sr'?'Nije moguće poslati porudžbinu. Pokušajte ponovo.':'Не удалось отправить заказ. Проверьте интернет и попробуйте ещё раз.');btn.disabled=false;btn.textContent=L('submit');});
 }
 function refreshOrders(cb){
@@ -778,6 +832,49 @@ function cloudPointDelete(id){
     .then(function(r){return r.json();}).then(function(j){if(j&&j.ok){if(Array.isArray(j.points))POINTS=j.points;renderPoints();}else alert(LANG==='sr'?'Nije uspelo':'Не удалось');}).catch(function(){alert(LANG==='sr'?'Greška':'Ошибка');});
 }
 
+/* ---------- мои данные (профиль) + объявление ---------- */
+function announceBannerHtml(){
+  if(!ANNOUNCE||!ANNOUNCE.active)return '';
+  var txt=(LANG==='sr')?(ANNOUNCE.sr||ANNOUNCE.ru||''):(ANNOUNCE.ru||ANNOUNCE.sr||'');
+  if(!txt)return '';
+  return '<div class="holiday-banner" style="background:#E8F4FC;border-color:#9fcdeb;color:#1a5a85;">📣 '+esc(txt).replace(/\n/g,'<br>')+'</div>';
+}
+function meField(id,label,val){return '<div class="field"><label class="lbl">'+esc(label)+'</label><input class="inp" id="'+id+'" value="'+esc(val||'')+'"></div>';}
+function renderMe(){
+  document.getElementById('hTitle').textContent=(LANG==='sr'?'Moji podaci':'Мои данные');
+  document.getElementById('bar').style.display='none';
+  var sr=(LANG==='sr'),P=PROFILE||{};
+  var c=document.getElementById('content');var h=navHtml('me');
+  h+='<div class="sec-title">'+(sr?'Podaci kompanije':'Данные компании')+'</div>';
+  h+='<p class="hint" style="margin-bottom:12px;">'+(sr?'Ovi podaci se koriste za dokumente i isporuku. Pekara ih vidi u svom kabinetu.':'Эти данные используются для документов и доставки. Пекарня видит их в своём кабинете.')+'</p>';
+  h+='<div class="form-card">'+
+     meField('meCompany',sr?'Naziv kompanije':'Название компании',P.company)+
+     meField('meContact',sr?'Ime za kontakt':'Контактное лицо',P.contact)+
+     meField('mePhone',sr?'Telefon':'Телефон',P.phone)+
+     meField('mePib','PIB',P.pib)+
+     meField('meMaticni',sr?'Matični broj':'Matični broj',P.maticni)+
+     meField('meAccount',sr?'Broj računa':'Номер счёта',P.account)+
+     '<button class="btn" id="meSave" style="margin-top:6px;">'+(sr?'Sačuvaj':'Сохранить')+'</button>'+
+     '</div>';
+  h+='<div class="sec-title">'+(sr?'Adrese objekata':'Адреса заведений')+'</div>';
+  if(POINTS.length){h+='<div class="form-card">';POINTS.forEach(function(pt){h+='<div style="padding:6px 0;font-size:14px;border-bottom:1px solid var(--line);">📍 '+esc(pt.name?pt.name+' — ':'')+esc(pt.address)+'</div>';});h+='</div>';}
+  else h+='<p class="hint">'+(sr?'Još nema adresa.':'Адресов пока нет.')+'</p>';
+  h+='<button class="btn btn-line" id="meToPoints" style="margin-top:10px;">'+(sr?'Uredi adrese':'Редактировать адреса')+'</button>';
+  c.innerHTML=h;bindNav();
+  document.getElementById('meSave').addEventListener('click',saveMe);
+  document.getElementById('meToPoints').addEventListener('click',function(){setView('points');});
+}
+function saveMe(){
+  function gv(id){var el=document.getElementById(id);return el?el.value.trim():'';}
+  var prof={company:gv('meCompany'),contact:gv('meContact'),phone:gv('mePhone'),pib:gv('mePib'),maticni:gv('meMaticni'),account:gv('meAccount')};
+  var btn=document.getElementById('meSave');btn.disabled=true;btn.textContent='…';
+  fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({profileSave:prof,code:CODE})})
+    .then(function(r){return r.json();}).then(function(j){
+      if(j&&j.ok){PROFILE=j.profile||prof;toast2(LANG==='sr'?'Sačuvano':'Сохранено');btn.disabled=false;btn.textContent=(LANG==='sr'?'Sačuvaj':'Сохранить');}
+      else{alert(LANG==='sr'?'Nije uspelo':'Не удалось');btn.disabled=false;btn.textContent=(LANG==='sr'?'Sačuvaj':'Сохранить');}
+    }).catch(function(){alert(LANG==='sr'?'Greška':'Ошибка');btn.disabled=false;btn.textContent=(LANG==='sr'?'Sačuvaj':'Сохранить');});
+}
+
 /* ---------- вход по коду ---------- */
 function showLogin(err){
   document.getElementById('hTitle').textContent=(LANG==='sr'?'Kabinet partnera':'Кабинет партнёра');
@@ -797,7 +894,7 @@ function applyAuth(j,code){
   CODE=code;PARTNER=(j.partner&&j.partner.name)||'';
   try{localStorage.setItem('bv_partner_code',code);}catch(e){}
   var data=j.data||{};catalog=(data.catalog||[]).filter(function(it){return it&&it.name&&it.retail!=null;});
-  ORDERS=j.orders||[];DOCS=j.documents||[];POINTS=j.points||[];
+  ORDERS=j.orders||[];DOCS=j.documents||[];POINTS=j.points||[];PROFILE=j.profile||{};ANNOUNCE=(data.announce)||{};deliveries=[];
   TERMS=Array.isArray(data.terms)?data.terms:[];FOOT=data.foot||{};CATSR=data.catNamesSr||{};
   if(data.settings){var s=data.settings;if(s.free!=null)FREE_FROM=Number(s.free)||FREE_FROM;if(s.minDeliv!=null)MIN_DELIVERY=Number(s.minDeliv)||MIN_DELIVERY;if(s.deliv!=null)DELIVERY=Number(s.deliv)||DELIVERY;if(Array.isArray(s.holidays)){HOLIDAY_RAW=s.holidays;HOLIDAYS=s.holidays.map(function(h){return typeof h==='string'?h:(h&&h.date)||'';}).filter(Boolean);}if(s.leadDays!=null)LEAD_DAYS=Number(s.leadDays)||LEAD_DAYS;}
   setView('new');

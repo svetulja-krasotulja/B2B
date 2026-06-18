@@ -4157,6 +4157,14 @@
       <p class="hint" style="margin-top:8px;">Этот адрес нигде не хранит цены — прайс подгружается только после ввода кода.</p>
     </div>
     <div class="card">
+      <div class="cat-title" style="margin-top:0;">Объявление партнёрам</div>
+      <p class="hint" style="margin-bottom:10px;">Текст увидят все партнёры в кабинете — баннером на странице нового заказа. Например: появилась новинка «Бабка с лимоном», смотрите прайс.</p>
+      <div class="field"><label class="lbl">Текст (RU)</label><textarea class="inp" id="annRu" rows="3" placeholder="Обратите внимание — у нас новинка «Бабка с лимоном», ознакомьтесь с прайс-листом!"></textarea></div>
+      <div class="field"><label class="lbl">Текст (SR, необязательно)</label><textarea class="inp" id="annSr" rows="3" placeholder="Tekst na srpskom (opciono)"></textarea></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;margin:6px 0 12px;"><input type="checkbox" id="annActive"> Показывать партнёрам</label>
+      <div class="actions"><button class="btn btn-primary btn-sm" id="annSave">Сохранить объявление</button></div>
+    </div>
+    <div class="card">
       <div class="cat-title" style="margin-top:0;">Документы партнёров</div>
       <p class="hint" style="margin-bottom:14px;">Привяжите документ к партнёру: счёт, накладную, условия, договор, сертификат или КП. Файл загрузите на Google Drive (доступ «по ссылке») и вставьте ссылку — партнёр увидит документ у себя и откроет его. Требуется подключённое облако.</p>
       <div class="grid3" style="margin-bottom:12px;">
@@ -4270,6 +4278,7 @@ function DC(){return [
 ];}
 
 var catalog=[], terms=[], offerLines=[], priceHistory=[], kpArchive=[], partners=[], catNamesSr={}, partnerPrefs={}, holidays=[], lastKP=null, selectedCats={};
+var profilesAdmin={}, pointsAdmin=[], announceData={}, openPartnerId='';
 
 /* ---- облако (Google Apps Script + Таблица) ---- */
 var K_GAS='bv_b2b_gas_url', K_MK='bv_b2b_master';
@@ -4320,6 +4329,9 @@ function applyCloudData(data){
   if(data.catNamesSr&&typeof data.catNamesSr==='object')catNamesSr=data.catNamesSr;
   if(data.partnerPrefs&&typeof data.partnerPrefs==='object')partnerPrefs=data.partnerPrefs;
   if(data.settings&&Array.isArray(data.settings.holidays))holidays=data.settings.holidays;
+  if(data.profiles&&typeof data.profiles==='object')profilesAdmin=data.profiles;
+  if(Array.isArray(data.points))pointsAdmin=data.points;
+  if(data.announce&&typeof data.announce==='object')announceData=data.announce;
   if(data.foot){for(var fk in DEFAULT_FOOT)if(data.foot[fk]!=null)footData[fk]=data.foot[fk];}
 }
 function rerenderAll(){renderCatalog();renderTerms();renderVersions();renderKPArchive();renderFoot();renderPartners();refreshOfferRefs();}
@@ -5559,6 +5571,24 @@ var _auditBtn=document.getElementById('auditRefresh');if(_auditBtn)_auditBtn.add
 
 /* ---------- партнёры (доступ) ---------- */
 function genCode(){var s='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',o='';for(var i=0;i<6;i++)o+=s[Math.floor(Math.random()*s.length)];return o;}
+function partnerDetailsHtml(p){
+  var pr=profilesAdmin[p.id]||{};
+  var addrs=pointsAdmin.filter(function(x){return x.partner_id===p.id&&x.active!==false;});
+  var rows=[];
+  function r(label,val){if(val)rows.push('<div style="display:flex;gap:10px;padding:2px 0;font-size:13.5px;"><span style="color:var(--muted);min-width:150px;">'+label+'</span><span style="font-weight:600;">'+esc(val)+'</span></div>');}
+  r('Компания',pr.company);
+  r('Контактное лицо',pr.contact);
+  r('Телефон',pr.phone||p.phone);
+  r('PIB',pr.pib);
+  r('Matični broj',pr.maticni);
+  r('Номер счёта',pr.account);
+  var h=rows.length?rows.join(''):'<div class="hint">Партнёр ещё не заполнил «Мои данные» в своём кабинете.</div>';
+  h+='<div style="font-weight:700;font-size:12.5px;color:var(--blue-d);margin-top:10px;text-transform:uppercase;letter-spacing:.04em;">Адреса ('+addrs.length+')</div>';
+  if(addrs.length)addrs.forEach(function(a){h+='<div style="font-size:13.5px;padding:2px 0;">📍 '+esc(a.name?a.name+' — ':'')+esc(a.address)+'</div>';});
+  else h+='<div class="hint">Адресов нет.</div>';
+  if(pr.updated){var u='';try{u=new Date(pr.updated).toLocaleString('ru-RU');}catch(e){}h+='<div class="hint" style="margin-top:8px;">Обновлено партнёром: '+esc(u)+'</div>';}
+  return h;
+}
 function renderPartners(){
   var w=document.getElementById('partnersWrap');if(!w)return;
   if(typeof fillDocPartners==='function')fillDocPartners();
@@ -5571,9 +5601,12 @@ function renderPartners(){
        (p.phone?'<div class="hint" style="margin-top:2px;">'+esc(p.phone)+'</div>':'')+'</div>'+
        '<div style="font-family:monospace;font-size:16px;font-weight:700;letter-spacing:.05em;background:var(--cream);border:1px solid var(--line);border-radius:9px;padding:7px 12px;">'+esc(p.code)+'</div>'+
        '<button class="btn btn-line btn-sm p-copy">Копировать код</button>'+
+       '<button class="btn btn-line btn-sm p-info">'+(openPartnerId===p.id?'▴ Данные':'▾ Данные')+'</button>'+
        '<button class="btn btn-line btn-sm p-cfg">⚙ Кабинет</button>'+
        '<button class="btn btn-line btn-sm p-toggle">'+(on?'Выключить':'Включить')+'</button>'+
-       '<button class="btn btn-line btn-sm danger p-del">Удалить</button></div>';
+       '<button class="btn btn-line btn-sm danger p-del">Удалить</button>'+
+       (openPartnerId===p.id?('<div style="flex-basis:100%;border-top:1px solid var(--line);margin-top:8px;padding-top:10px;">'+partnerDetailsHtml(p)+'</div>'):'')+
+       '</div>';
   });
   w.innerHTML=h;
   partners.forEach(function(p){
@@ -5582,8 +5615,10 @@ function renderPartners(){
       var t=p.code;if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){toast('Код скопирован: '+t);},function(){prompt('Код:',t);});}else prompt('Код:',t);});
     row.querySelector('.p-toggle').addEventListener('click',function(){p.active=(p.active===false);savePartners();renderPartners();toast(p.active!==false?'Доступ включён':'Доступ выключен');});
     row.querySelector('.p-cfg').addEventListener('click',function(){openPcfg(p.id,p.name);});
+    row.querySelector('.p-info').addEventListener('click',function(){openPartnerId=(openPartnerId===p.id?'':p.id);renderPartners();});
     row.querySelector('.p-del').addEventListener('click',function(){if(confirm('Удалить партнёра «'+p.name+'»? Код перестанет работать.')){partners=partners.filter(function(x){return x.id!==p.id;});savePartners();renderPartners();}});
   });
+  if(typeof fillAnnounce==='function')fillAnnounce();
 }
 document.getElementById('addPartner').addEventListener('click',function(){
   var name=prompt('Название компании / партнёра:');if(name===null)return;name=name.trim();if(!name){toast('Введите название');return;}
@@ -5595,6 +5630,14 @@ document.getElementById('addPartner').addEventListener('click',function(){
 });
 (function(){var ou=document.getElementById('orderUrl');if(ou){try{ou.value=localStorage.getItem('bv_b2b_order_url')||'';}catch(e){}
   ou.addEventListener('input',function(){try{localStorage.setItem('bv_b2b_order_url',this.value);}catch(e){}});}})();
+function fillAnnounce(){var a=announceData||{};var r=document.getElementById('annRu'),s=document.getElementById('annSr'),c=document.getElementById('annActive');if(r&&document.activeElement!==r)r.value=a.ru||'';if(s&&document.activeElement!==s)s.value=a.sr||'';if(c)c.checked=!!a.active;}
+(function(){var sv=document.getElementById('annSave');if(!sv)return;
+  sv.addEventListener('click',function(){
+    announceData={ru:(document.getElementById('annRu').value||'').trim(),sr:(document.getElementById('annSr').value||'').trim(),active:document.getElementById('annActive').checked,updated:Date.now()};
+    cloudPut('announce',announceData);toast('Объявление сохранено — партнёры увидят его в кабинете');
+  });
+  fillAnnounce();
+})();
 
 /* ---------- документы партнёров ---------- */
 var documentsAdmin=[];
