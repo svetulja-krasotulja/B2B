@@ -5473,6 +5473,10 @@ function cloudComment(orderId,text,internal){
   return fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
     body:JSON.stringify({master:MASTER,comment:text,internal:!!internal,order_id:orderId})}).then(function(r){return r.json();});
 }
+function cloudSetPayment(orderId,paid,dueDate){
+  return fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify({master:MASTER,setPayment:true,order_id:orderId,paid:!!paid,dueDate:dueDate||''})}).then(function(r){return r.json();});
+}
 var ORD_DOC={predracun:'Предсчёт (predračun)',otpremnica:'Отпремница',invoice:'Счёт',other:'Документ'};
 function cloudOrderDoc(orderId,type,title,url){
   return fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
@@ -5581,6 +5585,17 @@ function renderAdminOrders(){
          '<input type="file" class="od-file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp,application/pdf,image/*" style="flex:2;min-width:170px;font-size:12.5px;">'+
          '<button class="btn btn-primary btn-sm od-add">Прикрепить</button></div>'+
          '<div class="hint" style="margin-top:5px;">Можно выбрать несколько файлов (PDF, DOC, JPG, PNG, до 30 МБ каждый) — партнёр скачает сами файлы, не ссылки.</div></div>';
+      var paid=!!o.paid,due=o.dueDate||'';
+      h+='<div style="border-top:1px solid var(--line);margin-top:12px;padding-top:11px;">'+
+         '<div class="lbl" style="margin-bottom:6px;">Оплата</div>'+
+         '<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;">'+
+           '<span class="st-badge" style="background:'+(paid?'#2c7a4b22':'#c0512922')+';color:'+(paid?'#2c7a4b':'#c05129')+';border:1px solid '+(paid?'#2c7a4b55':'#c0512955')+';">'+(paid?'Оплачен':'Не оплачен')+'</span>'+
+           '<label class="hint" style="display:flex;align-items:center;gap:6px;">Срок оплаты<input type="date" class="inp pay-due" value="'+esc(due)+'" style="width:auto;font-size:13px;padding:6px 9px;"></label>'+
+           '<button class="btn btn-line btn-sm pay-toggle">'+(paid?'Снять оплату':'Отметить оплаченным')+'</button>'+
+           '<button class="btn btn-primary btn-sm pay-save">Сохранить срок</button>'+
+         '</div>'+
+         (o.paidAt?'<div class="hint" style="margin-top:5px;">Отмечен оплаченным: '+esc((function(){try{return new Date(o.paidAt).toLocaleDateString('ru-RU');}catch(e){return '';}})())+'</div>':'')+
+         '</div>';
       h+='</div>';
     }
     // строка статуса: смена по кнопке «Сохранить», а не сразу
@@ -5631,6 +5646,17 @@ function renderAdminOrders(){
       }).catch(function(){toast('Ошибка соединения');saveBtn.disabled=false;saveBtn.textContent='Сохранить и отправить';});});
     var det=card.querySelector('.o-det');
     if(det)det.addEventListener('click',function(){openAdminOrder=(openAdminOrder===id?'':id);renderAdminOrders();});
+    var payToggle=card.querySelector('.pay-toggle'),paySave=card.querySelector('.pay-save'),payDue=card.querySelector('.pay-due');
+    if(payToggle)payToggle.addEventListener('click',function(){var np=!o.paid;payToggle.disabled=true;
+      cloudSetPayment(id,np,payDue?payDue.value:(o.dueDate||'')).then(function(j){
+        if(j&&j.ok){o.paid=np;o.paidAt=np?new Date().toISOString():'';if(payDue)o.dueDate=payDue.value;toast(np?'Отмечен оплаченным':'Оплата снята');renderAdminOrders();}
+        else{toast('Не удалось');payToggle.disabled=false;}
+      }).catch(function(){toast('Ошибка соединения');payToggle.disabled=false;});});
+    if(paySave)paySave.addEventListener('click',function(){paySave.disabled=true;paySave.textContent='Сохраняем…';
+      cloudSetPayment(id,o.paid,payDue?payDue.value:'').then(function(j){
+        if(j&&j.ok){o.dueDate=payDue?payDue.value:'';toast('Срок оплаты сохранён');renderAdminOrders();}
+        else{toast('Не удалось');paySave.disabled=false;paySave.textContent='Сохранить срок';}
+      }).catch(function(){toast('Ошибка соединения');paySave.disabled=false;paySave.textContent='Сохранить срок';});});
     var edit=card.querySelector('.o-edit');
     if(edit)edit.addEventListener('click',function(){editingOrder=id;editItems=(o.items||[]).map(function(x){return {name:x.name,weight:x.weight,uom:x.uom,qty:Number(x.qty)||0,_unit:(x.sum&&x.qty?x.sum/x.qty:0)};});renderAdminOrders();});
     var odAdd=card.querySelector('.od-add');

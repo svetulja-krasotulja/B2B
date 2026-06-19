@@ -109,6 +109,16 @@
   .hint{font-size:12px;color:var(--muted);margin-top:4px;}
   .req{color:#d9534f;}
   .ocard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:11px;}
+  .paychip{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;}
+  .paychip.paid{background:#2c7a4b1f;color:#2c7a4b;}
+  .paychip.due{background:#c051291f;color:#c05129;}
+  .ban{border-radius:12px;padding:12px 15px;margin-bottom:11px;font-size:13.5px;line-height:1.5;}
+  .ban b{font-weight:700;}
+  .ban-info{background:#eef5fb;border:1px solid #bcdcf2;color:#1d5a82;}
+  .ban-warn{background:#fff7e0;border:1px solid #f0d999;color:#8a6312;}
+  .ban-over{background:#fdece5;border:1px solid #f3c3ab;color:#a3431f;}
+  .ndot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#d64b2a;vertical-align:middle;margin-left:3px;}
+  .unread-tag{display:inline-block;font-size:10.5px;font-weight:700;color:#fff;background:#d64b2a;border-radius:999px;padding:2px 8px;margin-left:7px;vertical-align:middle;}
   .ocard .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .ocard .onum{font-weight:700;font-size:15px;}
   .ocard .odate{font-size:12.5px;color:var(--muted);}
@@ -262,7 +272,7 @@ function setView(v){VIEW=v;
 }
 function navHtml(active){
   return '<nav><button data-v="new" class="'+(active==='new'?'on':'')+'">'+L('neworder')+'</button>'+
-         '<button data-v="orders" class="'+(active==='orders'?'on':'')+'">'+L('myorders')+(ORDERS.length?' ('+ORDERS.length+')':'')+'</button>'+
+         '<button data-v="orders" class="'+(active==='orders'?'on':'')+'">'+L('myorders')+(ORDERS.length?' ('+ORDERS.length+')':'')+(unreadOrders().length?' <span class="ndot"></span>':'')+'</button>'+
          '<button data-v="subs" class="'+(active==='subs'?'on':'')+'">'+(LANG==='sr'?'Redovne porudžbine':'Регулярные заказы')+(pendingCount()?' •'+pendingCount():'')+'</button>'+
          '<button data-v="me" class="'+(active==='me'?'on':'')+'">'+(LANG==='sr'?'Moji podaci i adrese':'Мои данные и адреса')+'</button>'+
          '<button data-v="care" class="'+(active==='care'?'on':'')+'">'+(LANG==='sr'?'Čuvanje i serviranje':'Хранение и подача')+'</button>'+
@@ -406,10 +416,54 @@ function renderTotals(){
 }
 
 /* ---------- мои заказы ---------- */
+function orderLastEventTs(o){
+  var t=0;
+  (o.comments||[]).forEach(function(c){if(!c.internal){var x=+new Date(c.ts);if(x>t)t=x;}});
+  (o.docs||[]).forEach(function(d){var x=+new Date(d.ts);if(x>t)t=x;});
+  return t;
+}
+function orderSeenTs(id){return +(localStorage.getItem('bv_seen_'+id)||0);}
+function orderUnread(o){var t=orderLastEventTs(o);return t>0&&t>orderSeenTs(o.order_id)&&(Date.now()-t<30*86400000);}
+function unreadOrders(){return (ORDERS||[]).filter(orderUnread);}
+function markOrderSeen(id){try{localStorage.setItem('bv_seen_'+id,String(Date.now()));}catch(e){}}
+function payDueInfo(o){
+  if(!o||o.paid||!o.dueDate)return null;
+  var today=new Date();today.setHours(0,0,0,0);
+  var d=new Date(o.dueDate+'T00:00:00');if(isNaN(+d))return null;
+  return {days:Math.round((d-today)/86400000),date:d};
+}
+function fmtDay(d){try{return d.toLocaleDateString(LANG==='sr'?'sr-RS':'ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});}catch(e){return '';}}
+function ordersBannersHtml(){
+  var h='';
+  var unread=unreadOrders();
+  if(unread.length){
+    h+='<div class="ban ban-info">📣 '+(LANG==='sr'
+      ?('Po '+unread.length+' '+(unread.length===1?'porudžbini':'porudžbina')+' ima nove poruke ili dokumente od pekare — otvorite porudžbinu da biste se upoznali.')
+      :('По '+unread.length+' '+(unread.length===1?'заказу':'заказам')+' есть новые сообщения или документы от пекарни — раскройте заказ, чтобы ознакомиться.'))+'</div>';
+  }
+  var over=[],soon=[];
+  (ORDERS||[]).forEach(function(o){var di=payDueInfo(o);if(!di)return;if(di.days<0)over.push({o:o,di:di});else if(di.days<=3)soon.push({o:o,di:di});});
+  soon.forEach(function(x){
+    var dd=fmtDay(x.di.date),n=x.di.days;
+    var when=LANG==='sr'?(n===0?'danas':(n===1?'sutra':('za '+n+' dana'))):(n===0?'сегодня':(n===1?'завтра':('через '+n+' дн.')));
+    h+='<div class="ban ban-warn">⏰ '+(LANG==='sr'
+      ?('Podsećamo: rok plaćanja porudžbine <b>'+esc(x.o.order_id)+'</b> je '+dd+' ('+when+').')
+      :('Напоминаем: срок оплаты заказа <b>'+esc(x.o.order_id)+'</b> — '+dd+' ('+when+').'))+'</div>';
+  });
+  over.forEach(function(x){
+    var dd=fmtDay(x.di.date),late=Math.abs(x.di.days);
+    var hard=late>7;
+    h+='<div class="ban ban-over">⚠️ '+(LANG==='sr'
+      ?('Plaćanje porudžbine <b>'+esc(x.o.order_id)+'</b> je kasnilo (rok je bio '+dd+'). '+(hard?'Molimo vas da se javite menadžeru radi provere.':'Molimo vas da izmirite račun. Ako ste već platili ili imate pitanja — javite se menadžeru.'))
+      :('Оплата заказа <b>'+esc(x.o.order_id)+'</b> просрочена (срок был '+dd+'). '+(hard?'Пожалуйста, свяжитесь с менеджером для уточнения.':'Просьба оплатить счёт. Если уже оплатили или есть вопросы — свяжитесь с менеджером.')))+'</div>';
+  });
+  return h;
+}
 function renderOrders(){
   document.getElementById('hTitle').textContent=L('myorders');
   document.getElementById('bar').style.display='none';
   var c=document.getElementById('content');var h=navHtml('orders');
+  h+=ordersBannersHtml();
   if(!ORDERS.length){h+='<div class="empty">'+L('noOrders')+'</div>';c.innerHTML=h;bindNav();return;}
   ORDERS.forEach(function(o){
     var st=o.status||'submitted';
@@ -417,12 +471,17 @@ function renderOrders(){
     var dt='';try{dt=new Date(o.created).toLocaleDateString('ru-RU');}catch(e){}
     var open=openOrder===o.order_id;
     h+='<div class="ocard"><div class="top"><span class="onum">'+esc(o.order_id||'')+'</span>'+
-       '<span class="st st-'+st+'">'+esc(stName(st))+'</span><span class="odate" style="margin-left:auto;">'+esc(dt)+'</span></div>'+
+       (orderUnread(o)?'<span class="unread-tag">'+(LANG==='sr'?'novo':'новое')+'</span>':'')+
+       '<span class="st st-'+st+'">'+esc(stName(st))+'</span>'+
+       (o.paid?'<span class="paychip paid">'+(LANG==='sr'?'Plaćeno':'Оплачено')+' ✓</span>':(o.dueDate?'<span class="paychip due">'+(LANG==='sr'?'Rok':'Срок')+': '+esc(fmtDay(new Date(o.dueDate+'T00:00:00')))+'</span>':''))+
+       '<span class="odate" style="margin-left:auto;">'+esc(dt)+'</span></div>'+
        (o.date?'<div class="odate" style="margin-top:6px;">'+L('ddate')+': '+esc(o.date)+(o.time?', '+esc(o.time):'')+'</div>':'')+
        (o.address?'<div class="hint" style="margin-top:2px;">'+L('address')+': '+esc(o.address)+'</div>':'')+
        '<div class="oitems">'+esc(items)+'</div>';
     if(open){
       h+='<div style="border-top:1px solid var(--line);margin-top:11px;padding-top:11px;">';
+      var _due=o.dueDate?fmtDay(new Date(o.dueDate+'T00:00:00')):'';
+      h+='<div style="font-size:13px;margin-bottom:9px;">'+(LANG==='sr'?'Plaćanje':'Оплата')+': '+(o.paid?'<b style="color:#2c7a4b;">'+(LANG==='sr'?'plaćeno':'оплачено')+'</b>':('<b style="color:#c05129;">'+(LANG==='sr'?'nije plaćeno':'не оплачено')+'</b>'+(_due?' · '+(LANG==='sr'?'rok':'срок')+' '+_due:'')))+'</div>';
       h+='<div class="lbl">'+L('statusHist')+'</div>';
       (o.events||[]).forEach(function(ev){var et='';try{et=new Date(ev.ts).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(e){}
         h+='<div style="font-size:13px;color:#55544c;padding:2px 0;">'+esc(stName(ev.status))+' <span class="hint">· '+esc(et)+'</span></div>';});
@@ -442,7 +501,7 @@ function renderOrders(){
   });
   c.innerHTML=h;bindNav();
   c.querySelectorAll('.repeat').forEach(function(b){b.addEventListener('click',function(){repeatOrder(this.dataset.id);});});
-  c.querySelectorAll('.det').forEach(function(b){b.addEventListener('click',function(){openOrder=(openOrder===this.dataset.id?'':this.dataset.id);renderOrders();});});
+  c.querySelectorAll('.det').forEach(function(b){b.addEventListener('click',function(){var id=this.dataset.id;var opening=(openOrder!==id);openOrder=(opening?id:'');if(opening)markOrderSeen(id);renderOrders();});});
 }
 function renderTerms(){
   document.getElementById('hTitle').textContent=L('info');
