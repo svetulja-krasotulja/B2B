@@ -323,6 +323,12 @@
   .cg-table th{background:#47A2DA;color:#fff;text-align:left;padding:9px 11px;font-weight:600;font-size:12.5px;}
   .cg-table td{border:1px solid #e6e4d8;padding:9px 11px;vertical-align:top;line-height:1.5;}
   .cg-table tr:nth-child(even) td{background:#faf9f3;}
+  .cg-fig{margin:0 0 14px;}
+  .cg-img{max-width:100%;border-radius:12px;border:1px solid #e1ddcb;display:block;}
+  .cg-cap{font-size:12.5px;color:#8a8980;margin-top:6px;}
+  .cg-dl{display:inline-block;margin-top:7px;font-size:13px;font-weight:600;color:#175680;text-decoration:none;}
+  .cg-file{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:11px 13px;border:1px solid #e1ddcb;border-radius:11px;margin:0 0 13px;font-size:14px;}
+  .cg-fic{font-size:20px;}.cg-fname{flex:1;min-width:120px;}
   .cg-doctitle{font-family:'Instrument Serif',serif;font-style:italic;font-size:29px;line-height:1.12;margin:0 0 4px;color:#1D1D1B;}
   .cg-brand{color:#8a8980;font-size:13px;}
   .cg-meta{color:#8a8980;font-size:13px;padding-bottom:14px;margin-bottom:6px;border-bottom:2px solid #47A2DA;}
@@ -339,12 +345,13 @@
   .care-colors{display:flex;gap:7px;margin-top:9px;}
   .cc-sw{width:24px;height:24px;border-radius:50%;border:2px solid;cursor:pointer;padding:0;}
   .cc-sw.on{box-shadow:0 0 0 2px #fff,0 0 0 4px #1D1D1B;}
-  .cg-card{background:#fff;border:1px solid #e9e7db;border-radius:14px;padding:20px 22px;margin-bottom:14px;}
+  .cg-card{padding:2px 2px 22px;margin-bottom:22px;border-bottom:1px solid #d6d2bf;}
+  .cg-card:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
   .cg-card .cg-h:first-child,.cg-card .cg-p:first-child,.cg-card .cg-note:first-child{margin-top:0;}
   .cg-card>*:last-child{margin-bottom:0;}
-  .cg-foot{background:transparent;border:none;padding:4px 6px 0;margin-bottom:0;}
+  .cg-foot{padding:14px 2px 0;}
   .cg-foot .cg-p{font-size:12.5px;color:#8a8980;margin:0;}
-  .care-preview{border:1px solid var(--line);border-radius:14px;padding:24px 22px;background:#F4F3E9;}
+  .care-preview{border:1px solid var(--line);border-radius:14px;padding:24px 26px;background:#F4F3E9;}
 </style>
 </head>
 <body>
@@ -4239,6 +4246,10 @@
         <button class="btn btn-line btn-sm" id="careAddP">+ Текст</button>
         <button class="btn btn-line btn-sm" id="careAddNote">+ Заметка</button>
         <button class="btn btn-line btn-sm" id="careAddTable">+ Таблица</button>
+        <button class="btn btn-line btn-sm" id="careAddImg">+ Фото</button>
+        <button class="btn btn-line btn-sm" id="careAddFile">+ Файл</button>
+        <input type="file" id="careImgInp" accept="image/*" style="display:none;">
+        <input type="file" id="careFileInp" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp" style="display:none;">
       </div>
       <div class="actions" style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px;align-items:center;gap:12px;">
         <button class="btn btn-primary btn-sm" id="careSave">Сохранить</button>
@@ -5054,10 +5065,18 @@ function itemCard(it){
   body.querySelector('.f-sostav-sr').addEventListener('input',function(){it.sostavSr=this.value;saveCat();});
   var inp=body.querySelector('.f-photo-inp');
   body.querySelector('.f-photo-btn').addEventListener('click',function(){inp.click();});
-  inp.addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;
-    compressImage(f,function(d){it.photo=d;saveCat();it._open=true;refreshCard(card,it);},function(){toast('Не удалось обработать фото');});e.target.value='';});
+  inp.addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;e.target.value='';
+    compressImage(f,function(d){it.photo=d;saveCat();it._open=true;refreshCard(card,it);
+      var b64=d.indexOf('base64,')>=0?d.substring(d.indexOf('base64,')+7):d;
+      if(GAS_URL){toast('Загрузка фото для партнёров…');
+        driveUpload((it.name||'product')+'.jpg','image/jpeg',b64).then(function(j){
+          if(j&&j.ok&&j.fileId){it.photoId=j.fileId;saveCat();toast('Фото сохранено ✓');}
+          else toast(j&&j.error==='auth'?'Фото локально. Для партнёров переразверните Code.gs (доступ к Drive)':'Фото сохранено локально');
+        }).catch(function(){toast('Фото сохранено локально');});
+      }
+    },function(){toast('Не удалось обработать фото');});});
   var pdel=body.querySelector('.f-photo-del');
-  if(pdel)pdel.addEventListener('click',function(){it.photo='';saveCat();it._open=true;refreshCard(card,it);});
+  if(pdel)pdel.addEventListener('click',function(){it.photo='';it.photoId='';saveCat();it._open=true;refreshCard(card,it);});
   acts.querySelector('.save').addEventListener('click',function(){saveCat();toast('Позиция сохранена ✓');});
   acts.querySelector('.dup').addEventListener('click',function(){
     var copy=JSON.parse(JSON.stringify(it));copy.id=uid();copy.name=it.name+' (копия)';delete copy._open;
@@ -5953,7 +5972,9 @@ var DEFAULT_STORAGE={blocks:[
     sr:'BreadVenture · breadventure.bakery@gmail.com · +381 63 705 7214 · Svetlana Vasiljeva (osnivačica)'}}
 ]};
 
-function careTypeLabel(t){return t==='h'?'Заголовок':t==='table'?'Таблица':t==='note'?'Выделение':'Текст';}
+function careTypeLabel(t){return t==='h'?'Заголовок':t==='table'?'Таблица':t==='note'?'Выделение':t==='img'?'Фото':t==='file'?'Файл':'Текст';}
+function driveThumb(id){return 'https://drive.google.com/thumbnail?id='+id+'&sz=w1000';}
+function driveDl(id){return 'https://drive.google.com/uc?export=download&id='+id;}
 function careBlocksHtml(blocks,lang){
   if(!blocks||!blocks.length)return '';
   function tx(b){return (b.t&&b.t[lang])||'';}
@@ -5962,6 +5983,12 @@ function careBlocksHtml(blocks,lang){
     if(b.type==='h')return '<h3 class="cg-h">'+esc(tx(b))+'</h3>';
     if(b.type==='note'){var c=CARE_COLORS[b.color||'yellow']||CARE_COLORS.yellow;return '<div class="cg-note" style="background:'+c.bg+';border-color:'+c.bd+';color:'+c.fg+';">'+nl(esc(tx(b)))+'</div>';}
     if(b.type==='table'){var t=(b.t&&b.t[lang])||[];if(!t.length)return '';var s='<div class="cg-tablewrap"><table class="cg-table">';t.forEach(function(row,ri){s+='<tr>';row.forEach(function(cl){var tag=ri===0?'th':'td';s+='<'+tag+'>'+nl(esc(cl||''))+'</'+tag+'>';});s+='</tr>';});return s+'</table></div>';}
+    if(b.type==='img'){var src=b.fileId?driveThumb(b.fileId):(b.thumb||'');var dl=b.fileId?driveDl(b.fileId):(b.download||'');var cap=(b.cap&&b.cap[lang])||'';
+      return '<figure class="cg-fig">'+(src?'<img class="cg-img" data-fid="'+esc(b.fileId||'')+'" src="'+esc(src)+'" alt="">':'')+
+        (cap?'<figcaption class="cg-cap">'+nl(esc(cap))+'</figcaption>':'')+
+        (dl?'<a class="cg-dl" href="'+esc(dl)+'" rel="noopener">⬇ '+(lang==='sr'?'Preuzmi sliku':'Скачать фото')+'</a>':'')+'</figure>';}
+    if(b.type==='file'){var fdl=b.fileId?driveDl(b.fileId):(b.download||'');var ttl=(b.ttl&&b.ttl[lang])||b.name||(lang==='sr'?'Dokument':'Документ');
+      return '<div class="cg-file"><span class="cg-fic">📄</span><span class="cg-fname">'+esc(ttl)+'</span>'+(fdl?'<a class="cg-dl" href="'+esc(fdl)+'" rel="noopener">⬇ '+(lang==='sr'?'Preuzmi':'Скачать')+'</a>':'')+'</div>';}
     return '<p class="cg-p">'+nl(esc(tx(b)))+'</p>';
   }
   var secs=[],cur=null;
@@ -5992,6 +6019,47 @@ function careTableEditorHtml(b,lang){
   h+='<div class="care-tbtns"><button class="btn btn-line btn-sm ct-addrow">+ строка</button><button class="btn btn-line btn-sm ct-addcol">+ столбец</button><button class="btn btn-line btn-sm danger ct-delcol">− столбец</button></div>';
   return h;
 }
+function careImgEditorHtml(b,lang){
+  var src=b.fileId?driveThumb(b.fileId):(b.thumb||'');
+  return '<div style="display:flex;gap:12px;align-items:flex-start;">'+
+    (src?'<img src="'+esc(src)+'" style="width:92px;height:92px;object-fit:cover;border-radius:10px;border:1px solid var(--line);">':'<div style="width:92px;height:92px;border-radius:10px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;">фото</div>')+
+    '<div style="flex:1;"><input class="inp cb-cap" value="'+esc((b.cap&&b.cap[lang])||'')+'" placeholder="Подпись к фото (необяз.)"><div class="hint" style="margin-top:5px;">'+esc(b.name||'')+'</div></div></div>';
+}
+function careFileEditorHtml(b,lang){
+  return '<div style="display:flex;gap:10px;align-items:center;"><span style="font-size:22px;">📄</span>'+
+    '<div style="flex:1;"><input class="inp cb-ttl" value="'+esc((b.ttl&&b.ttl[lang])||'')+'" placeholder="Название документа"><div class="hint" style="margin-top:5px;">'+esc(b.name||'')+'</div></div></div>';
+}
+function driveUpload(fileName,mime,dataB64){
+  return fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify({master:MASTER,driveUpload:true,fileName:fileName,mime:mime,dataB64:dataB64})}).then(function(r){return r.json();});
+}
+function careFileBytes(fileId){
+  return fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify({master:MASTER,fileBytes:true,fileId:fileId})}).then(function(r){return r.json();});
+}
+function careAddImage(file){
+  if(!file)return;if(file.size>10*1024*1024){toast('Фото больше 10 МБ — уменьшите');return;}
+  toast('Загрузка фото…');
+  compressImage(file,function(d){
+    var b64=d.indexOf('base64,')>=0?d.substring(d.indexOf('base64,')+7):d;
+    driveUpload((file.name||'photo')+'.jpg','image/jpeg',b64).then(function(j){
+      if(j&&j.ok&&j.fileId){careEnsure();storageData.blocks.push({type:'img',fileId:j.fileId,name:file.name||'',cap:{ru:'',sr:''}});renderCareAdmin();toast('Фото добавлено');}
+      else toast(j&&j.error==='auth'?'Нет доступа к Drive — переразверните Code.gs':'Не удалось загрузить');
+    }).catch(function(){toast('Ошибка соединения');});
+  },function(){toast('Не удалось обработать фото');});
+}
+function careAddFile(file){
+  if(!file)return;if(file.size>10*1024*1024){toast('Файл больше 10 МБ — уменьшите');return;}
+  toast('Загрузка файла…');
+  var rd=new FileReader();
+  rd.onload=function(){var b64=String(rd.result||'');var ix=b64.indexOf('base64,');if(ix>=0)b64=b64.substring(ix+7);
+    driveUpload(file.name||'file',file.type||'application/octet-stream',b64).then(function(j){
+      if(j&&j.ok&&j.fileId){careEnsure();storageData.blocks.push({type:'file',fileId:j.fileId,name:file.name||'',ttl:{ru:file.name||'Документ',sr:file.name||'Dokument'}});renderCareAdmin();toast('Файл добавлен');}
+      else toast(j&&j.error==='auth'?'Нет доступа к Drive — переразверните Code.gs':'Не удалось загрузить');
+    }).catch(function(){toast('Ошибка соединения');});
+  };
+  rd.onerror=function(){toast('Не удалось прочитать файл');};rd.readAsDataURL(file);
+}
 function renderCareAdmin(){
   careEnsure();
   var lang=storeLang;
@@ -6006,6 +6074,8 @@ function renderCareAdmin(){
        '<button class="btn btn-line btn-sm danger cb-del">Удалить</button></div>';
     if(b.type==='table')h+=careTableEditorHtml(b,lang);
     else if(b.type==='h')h+='<input class="inp cb-text" value="'+esc((b.t&&b.t[lang])||'')+'" placeholder="Заголовок">';
+    else if(b.type==='img')h+=careImgEditorHtml(b,lang);
+    else if(b.type==='file')h+=careFileEditorHtml(b,lang);
     else h+='<textarea class="inp cb-text" rows="'+(b.type==='note'?3:4)+'" placeholder="Текст">'+esc((b.t&&b.t[lang])||'')+'</textarea>';
     if(b.type==='note')h+=careColorPaletteHtml(b);
     h+='</div>';
@@ -6030,6 +6100,8 @@ function bindCareEditor(){
         b.t=b.t||{};b.t[lang]=b.t[lang]||[];b.t[lang][r]=b.t[lang][r]||[];b.t[lang][r][ci]=this.value;renderCarePreview();});
     });
     el.querySelectorAll('.cc-sw').forEach(function(sw){sw.addEventListener('click',function(){b.color=this.dataset.col;renderCareAdmin();});});
+    var cp=el.querySelector('.cb-cap');if(cp)cp.addEventListener('input',function(){b.cap=b.cap||{};b.cap[lang]=this.value;renderCarePreview();});
+    var tt=el.querySelector('.cb-ttl');if(tt)tt.addEventListener('input',function(){b.ttl=b.ttl||{};b.ttl[lang]=this.value;renderCarePreview();});
     var ar=el.querySelector('.ct-addrow');if(ar)ar.addEventListener('click',function(){careTableAddRow(b);renderCareAdmin();});
     var ac=el.querySelector('.ct-addcol');if(ac)ac.addEventListener('click',function(){careTableAddCol(b);renderCareAdmin();});
     var dc=el.querySelector('.ct-delcol');if(dc)dc.addEventListener('click',function(){careTableDelCol(b);renderCareAdmin();});
@@ -6096,6 +6168,7 @@ function exportCarePDF(){
   function done(){if(node.parentNode)node.parentNode.removeChild(node);if(btn){btn.disabled=false;btn.textContent=oldT;}}
   function go(){
     var scale=2;
+    function render(){
     window.html2canvas(node,{scale:scale,backgroundColor:'#F4F3E9',useCORS:true,windowWidth:node.scrollWidth}).then(function(canvas){
       var jsPDF=window.jspdf.jsPDF;
       var pdf=new jsPDF('p','mm','a4');
@@ -6122,6 +6195,12 @@ function exportCarePDF(){
       var fname='BreadVenture - '+(lang==='sr'?'Cuvanje i preporuke':'Hranenie i rekomendacii')+(pname?' - '+pname:'')+'.pdf';
       pdf.save(fname);done();
     }).catch(function(e){done();alert('Не удалось сформировать PDF: '+e);});
+    }
+    var imgs=Array.prototype.slice.call(node.querySelectorAll('img.cg-img[data-fid]')).filter(function(im){return im.getAttribute('data-fid');});
+    if(!imgs.length){render();return;}
+    Promise.all(imgs.map(function(im){return careFileBytes(im.getAttribute('data-fid')).then(function(j){
+      if(j&&j.ok&&j.b64)return new Promise(function(res){im.onload=function(){res();};im.onerror=function(){res();};im.src='data:'+(j.mime||'image/jpeg')+';base64,'+j.b64;});
+    }).catch(function(){});})).then(render).catch(render);
   }
   if(document.fonts&&document.fonts.load){
     Promise.all([document.fonts.load("italic 30px 'Instrument Serif'"),document.fonts.load("700 16px 'Wix Madefor Text'"),document.fonts.load("400 14px 'Wix Madefor Text'")])
@@ -6134,6 +6213,10 @@ function exportCarePDF(){
   on('careAddP',function(){careAddBlock('p');});
   on('careAddNote',function(){careAddBlock('note');});
   on('careAddTable',function(){careAddBlock('table');});
+  on('careAddImg',function(){var i=document.getElementById('careImgInp');if(i)i.click();});
+  on('careAddFile',function(){var i=document.getElementById('careFileInp');if(i)i.click();});
+  var _ci=document.getElementById('careImgInp');if(_ci)_ci.addEventListener('change',function(e){var f=e.target.files[0];careAddImage(f);e.target.value='';});
+  var _cf=document.getElementById('careFileInp');if(_cf)_cf.addEventListener('change',function(e){var f=e.target.files[0];careAddFile(f);e.target.value='';});
   on('careSave',saveStorage);
   on('careDocBtn',exportCarePDF);
   document.querySelectorAll('#careLangSeg .seg-b').forEach(function(b){

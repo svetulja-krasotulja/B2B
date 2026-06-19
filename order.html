@@ -32,10 +32,17 @@
   .cg-table th{background:var(--blue);color:#fff;text-align:left;padding:9px 11px;font-weight:600;font-size:12.5px;}
   .cg-table td{border:1px solid var(--line);padding:9px 11px;vertical-align:top;line-height:1.5;}
   .cg-table tr:nth-child(even) td{background:#faf9f3;}
-  .cg-card{background:#fff;border:1px solid #e9e7db;border-radius:14px;padding:18px 18px;margin-bottom:13px;}
+  .cg-fig{margin:0 0 14px;}
+  .cg-img{max-width:100%;border-radius:12px;border:1px solid #e1ddcb;display:block;}
+  .cg-cap{font-size:12.5px;color:var(--muted);margin-top:6px;}
+  .cg-dl{display:inline-block;margin-top:7px;font-size:13px;font-weight:600;color:var(--blue-d);text-decoration:none;}
+  .cg-file{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:11px 13px;border:1px solid #e1ddcb;border-radius:11px;margin:0 0 13px;font-size:14px;}
+  .cg-fic{font-size:20px;}.cg-fname{flex:1;min-width:120px;}
+  .cg-card{padding:2px 2px 20px;margin-bottom:20px;border-bottom:1px solid #d6d2bf;}
+  .cg-card:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
   .cg-card .cg-h:first-child,.cg-card .cg-p:first-child,.cg-card .cg-note:first-child{margin-top:0;}
   .cg-card>*:last-child{margin-bottom:0;}
-  .cg-foot{background:transparent;border:none;padding:2px 4px 0;margin-bottom:0;}
+  .cg-foot{padding:12px 2px 0;}
   .cg-foot .cg-p{font-size:12.5px;color:var(--muted);margin:0;}
   nav button.on{background:var(--dark);color:#fff;border-color:var(--dark);}
   .note{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 15px;font-size:13px;color:#55544c;margin:14px 0;}
@@ -150,7 +157,7 @@ try{CODE=localStorage.getItem('bv_partner_code')||'';}catch(e){}
 var DOC_T={invoice:'Счёт',delivery_note:'Накладная',terms:'Условия',contract:'Договор',certificate:'Сертификат',offer:'КП',other:'Документ'};
 var DOC_T_SR={invoice:'Račun',delivery_note:'Otpremnica',terms:'Uslovi',contract:'Ugovor',certificate:'Sertifikat',offer:'Ponuda',other:'Dokument'};
 var TL={
-  ru:{neworder:'Новый заказ',myorders:'Мои заказы',docs:'Документы',info:'Условия',pricetab:'Прайс',logout:'выйти',
+  ru:{neworder:'Новый заказ',myorders:'Мои заказы',docs:'Документы',info:'Условия работы',pricetab:'Прайс-лист',logout:'выйти',
     submit:'Отправить заказ',pick:'выберите позиции',pos:'поз.',repeat:'Повторить',details:'Подробнее',collapse:'Свернуть',
     deliv:'Данные доставки',contact:'Контактное лицо',phone:'Телефон',ddate:'Дата доставки',
     pickup:'Самовывоз из пекарни (без доставки)',comment:'Комментарий',dtime:'Время доставки',address:'Адрес заведения',earliest:'Ближайшая доступная дата',needdate:'Укажите дату доставки.',needaddr:'Укажите адрес заведения для доставки.',blocked:'На эту дату заказ разместить нельзя.',nearest:'Ближайшая доступная дата',sundayoff:'По воскресеньям отгрузки нет.',cutoff:'Заказ принимается не позднее чем за 2 дня до доставки (производственный цикл).',
@@ -158,7 +165,7 @@ var TL={
     noOrders:'У вас пока нет заказов.',noDocs:'Документы появятся здесь после загрузки пекарней.',
     open:'Открыть / скачать',terms:'Условия сотрудничества',contacts:'Контакты',price:'Актуальный прайс',
     delivHint:'Не ранее чем через 48 часов. По воскресеньям отгрузки нет.'},
-  sr:{neworder:'Nova porudžbina',myorders:'Moje porudžbine',docs:'Dokumenti',info:'Uslovi',pricetab:'Cenovnik',logout:'izlaz',
+  sr:{neworder:'Nova porudžbina',myorders:'Moje porudžbine',docs:'Dokumenti',info:'Uslovi rada',pricetab:'Cenovnik',logout:'izlaz',
     submit:'Pošalji porudžbinu',pick:'izaberite stavke',pos:'stavki',repeat:'Ponovi',details:'Detaljnije',collapse:'Sažmi',
     deliv:'Podaci o dostavi',contact:'Kontakt osoba',phone:'Telefon',ddate:'Datum isporuke',
     pickup:'Preuzimanje u pekari (bez dostave)',comment:'Komentar',dtime:'Vreme isporuke',address:'Adresa objekta',earliest:'Najraniji dostupan datum',needdate:'Navedite datum isporuke.',needaddr:'Navedite adresu objekta za dostavu.',blocked:'Za ovaj datum nije moguće napraviti porudžbinu.',nearest:'Najraniji dostupan datum',sundayoff:'Nedeljom se ne isporučuje.',cutoff:'Porudžbina se prima najkasnije 2 dana pre isporuke (proizvodni ciklus).',
@@ -251,15 +258,14 @@ function setView(v){VIEW=v;
   document.getElementById('logout').addEventListener('click',logout);
   var _tag=document.querySelector('.tag');if(_tag)_tag.textContent=(LANG==='sr'?'BreadVenture · zanatska pekara · Beograd':'BreadVenture · ремесленная пекарня · Белград');
   document.querySelectorAll('.lng').forEach(function(a){a.addEventListener('click',function(){LANG=this.dataset.l;try{localStorage.setItem('bv_partner_lang',LANG);}catch(e){}setView(VIEW);});});
-  if(v==='new')renderNew();else if(v==='orders')renderOrders();else if(v==='subs')renderSubs();else if(v==='points')renderPoints();else if(v==='me')renderMe();else if(v==='care')renderStorage();else if(v==='docs')renderDocs();else if(v==='price')renderPriceList();else renderTerms();
+  if(v==='new')renderNew();else if(v==='orders')renderOrders();else if(v==='subs')renderSubs();else if(v==='points')renderMe();else if(v==='me')renderMe();else if(v==='care')renderStorage();else if(v==='docs')renderDocs();else if(v==='price')renderPriceList();else renderTerms();
 }
 function navHtml(active){
   return '<nav><button data-v="new" class="'+(active==='new'?'on':'')+'">'+L('neworder')+'</button>'+
          '<button data-v="orders" class="'+(active==='orders'?'on':'')+'">'+L('myorders')+(ORDERS.length?' ('+ORDERS.length+')':'')+'</button>'+
-         '<button data-v="subs" class="'+(active==='subs'?'on':'')+'">'+(LANG==='sr'?'Redovno':'Регулярно')+(pendingCount()?' •'+pendingCount():'')+'</button>'+
-         '<button data-v="points" class="'+(active==='points'?'on':'')+'">'+(LANG==='sr'?'Adrese':'Адреса')+(POINTS.length?' ('+POINTS.length+')':'')+'</button>'+
-         '<button data-v="me" class="'+(active==='me'?'on':'')+'">'+(LANG==='sr'?'Moji podaci':'Мои данные')+'</button>'+
-         '<button data-v="care" class="'+(active==='care'?'on':'')+'">'+(LANG==='sr'?'Čuvanje':'Хранение')+'</button>'+
+         '<button data-v="subs" class="'+(active==='subs'?'on':'')+'">'+(LANG==='sr'?'Redovne porudžbine':'Регулярные заказы')+(pendingCount()?' •'+pendingCount():'')+'</button>'+
+         '<button data-v="me" class="'+(active==='me'?'on':'')+'">'+(LANG==='sr'?'Moji podaci i adrese':'Мои данные и адреса')+'</button>'+
+         '<button data-v="care" class="'+(active==='care'?'on':'')+'">'+(LANG==='sr'?'Čuvanje i serviranje':'Хранение и подача')+'</button>'+
          '<button data-v="docs" class="'+(active==='docs'?'on':'')+'">'+L('docs')+(DOCS.length?' ('+DOCS.length+')':'')+'</button>'+
          '<button data-v="price" class="'+(active==='price'?'on':'')+'">'+L('pricetab')+'</button>'+
          '<button data-v="info" class="'+(active==='info'?'on':'')+'">'+L('info')+'</button></nav>';
@@ -483,9 +489,10 @@ function renderPriceList(){
         var desc=LANG==='sr'?(it.descSr||it.desc||''):(it.desc||'');
         var tiers=(it.tiers||[]).slice().sort(function(a,b){return a.min-b.min;});
         h+='<div class="pcard">'+
-           '<div class="ph">'+(it.photo?'<img src="'+esc(it.photo)+'" alt="">':'🥖')+'</div>'+
+           '<div class="ph">'+((it.photo||it.photoId)?'<img src="'+esc(it.photo||driveThumb(it.photoId))+'" alt="" loading="lazy">':'🥖')+'</div>'+
            '<div class="pbody">'+
            '<div class="ptitle">'+esc(it.name)+(it.weight?'<span class="w">'+esc(it.weight)+'</span>':'')+'</div>'+
+           (it.photoId?'<a class="hint" href="'+driveDl(it.photoId)+'" rel="noopener" style="color:var(--blue-d);display:inline-block;margin:1px 0 5px;text-decoration:none;">⬇ '+(LANG==='sr'?'Preuzmi sliku':'Скачать фото')+'</a>':'')+
            (sost?'<div class="psost">'+(LANG==='sr'?'Sastav: ':'Состав: ')+esc(sost)+'</div>':'')+
            '<div class="pret">'+(LANG==='sr'?'Maloprodaja: ':'Розница: ')+fmt(it.retail)+' '+cur()+' · PDV '+pdv+'%</div>';
         if(tiers.length){
@@ -795,7 +802,7 @@ var ptEditId='';
 function cloudPointList(cb){
   if(!CODE){if(cb)cb();return;}
   fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({pointList:CODE})})
-    .then(function(r){return r.json();}).then(function(j){if(j&&j.ok&&Array.isArray(j.points))POINTS=j.points;if(cb)cb();else if(VIEW==='points')renderPoints();})
+    .then(function(r){return r.json();}).then(function(j){if(j&&j.ok&&Array.isArray(j.points))POINTS=j.points;if(cb)cb();else if(VIEW==='points'||VIEW==='me')renderMe();})
     .catch(function(){if(cb)cb();});
 }
 function renderPoints(){
@@ -829,7 +836,7 @@ function openPointForm(editId){
      '<div class="field"><label class="flab">'+(LANG==='sr'?'Adresa':'Адрес')+' <span class="req">*</span></label><input class="inp" id="ptAddr" placeholder="'+(LANG==='sr'?'Ulica, broj, grad':'Улица, дом, город')+'" value="'+esc(pt&&pt.address||'')+'"></div>'+
      '<button class="btn" id="ptSave" style="margin-top:6px;">'+(LANG==='sr'?'Sačuvaj':'Сохранить')+'</button></div>';
   c.innerHTML=h;
-  document.getElementById('ptBack').addEventListener('click',function(){renderPoints();});
+  document.getElementById('ptBack').addEventListener('click',function(){renderMe();});
   document.getElementById('ptSave').addEventListener('click',savePoint);
 }
 function savePoint(){
@@ -837,7 +844,7 @@ function savePoint(){
   if(!addr){alert(LANG==='sr'?'Unesite adresu.':'Укажите адрес.');return;}
   var point={name:name,address:addr};if(ptEditId)point.id=ptEditId;
   var btn=document.getElementById('ptSave');btn.disabled=true;btn.textContent='…';
-  cloudPointSave(point,function(ok){if(ok)renderPoints();else{alert(LANG==='sr'?'Nije uspelo':'Не удалось');btn.disabled=false;btn.textContent=(LANG==='sr'?'Sačuvaj':'Сохранить');}});
+  cloudPointSave(point,function(ok){if(ok)renderMe();else{alert(LANG==='sr'?'Nije uspelo':'Не удалось');btn.disabled=false;btn.textContent=(LANG==='sr'?'Sačuvaj':'Сохранить');}});
 }
 function cloudPointSave(point,cb){
   fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({pointSave:point,code:CODE})})
@@ -845,7 +852,7 @@ function cloudPointSave(point,cb){
 }
 function cloudPointDelete(id){
   fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({pointDelete:true,pointId:id,code:CODE})})
-    .then(function(r){return r.json();}).then(function(j){if(j&&j.ok){if(Array.isArray(j.points))POINTS=j.points;renderPoints();}else alert(LANG==='sr'?'Nije uspelo':'Не удалось');}).catch(function(){alert(LANG==='sr'?'Greška':'Ошибка');});
+    .then(function(r){return r.json();}).then(function(j){if(j&&j.ok){if(Array.isArray(j.points))POINTS=j.points;renderMe();}else alert(LANG==='sr'?'Nije uspelo':'Не удалось');}).catch(function(){alert(LANG==='sr'?'Greška':'Ошибка');});
 }
 
 /* ---------- мои данные (профиль) + объявление ---------- */
@@ -878,13 +885,23 @@ function renderMe(){
      meField('meAccount',sr?'Broj računa':'Номер счёта',P.account)+
      '<button class="btn" id="meSave" style="margin-top:6px;">'+(sr?'Sačuvaj':'Сохранить')+'</button>'+
      '</div>';
-  h+='<div class="sec-title">'+(sr?'Adrese objekata':'Адреса заведений')+'</div>';
-  if(POINTS.length){h+='<div class="form-card">';POINTS.forEach(function(pt){h+='<div style="padding:6px 0;font-size:14px;border-bottom:1px solid var(--line);">📍 '+esc(pt.name?pt.name+' — ':'')+esc(pt.address)+'</div>';});h+='</div>';}
-  else h+='<p class="hint">'+(sr?'Još nema adresa.':'Адресов пока нет.')+'</p>';
-  h+='<button class="btn btn-line" id="meToPoints" style="margin-top:10px;">'+(sr?'Uredi adrese':'Редактировать адреса')+'</button>';
+  h+='<div class="sec-title">'+(sr?'Adrese isporuke (tačke)':'Адреса доставки (точки)')+'</div>';
+  h+='<p class="hint" style="margin-bottom:12px;">'+(sr?'Sačuvajte adrese vaših objekata. Pri poručivanju biraćete tačku — dostava i prag se računaju po toj tački.':'Сохраните адреса ваших точек. При заказе вы выберете точку — доставка и порог считаются по этой точке.')+'</p>';
+  if(!POINTS.length)h+='<div class="empty" style="margin-bottom:14px;">'+(sr?'Još nema sačuvanih adresa.':'Сохранённых адресов пока нет.')+'</div>';
+  POINTS.forEach(function(pt){
+    h+='<div class="ocard" style="margin-bottom:9px;"><div class="top"><span style="font-weight:600;">📍 '+esc(pt.name||(sr?'Tačka':'Точка'))+'</span></div>'+
+       '<div style="font-size:13.5px;color:#55544c;margin-top:3px;">'+esc(pt.address||'')+'</div>'+
+       '<div style="display:flex;gap:7px;margin-top:10px;">'+
+       '<button class="btn btn-line pt-ed" data-id="'+esc(pt.id)+'" style="padding:8px 14px;font-size:13px;">'+(sr?'Izmeni':'Изменить')+'</button>'+
+       '<button class="btn btn-line pt-del" data-id="'+esc(pt.id)+'" style="padding:8px 14px;font-size:13px;color:#b3261e;">'+(sr?'Obriši':'Удалить')+'</button>'+
+       '</div></div>';
+  });
+  h+='<button class="btn" id="ptNew" style="margin-top:6px;">+ '+(sr?'Nova adresa':'Новый адрес')+'</button>';
   c.innerHTML=h;bindNav();
   document.getElementById('meSave').addEventListener('click',saveMe);
-  document.getElementById('meToPoints').addEventListener('click',function(){setView('points');});
+  c.querySelectorAll('.pt-ed').forEach(function(b){b.addEventListener('click',function(){openPointForm(this.dataset.id);});});
+  c.querySelectorAll('.pt-del').forEach(function(b){b.addEventListener('click',function(){var id=this.dataset.id;if(confirm(sr?'Obrisati ovu adresu?':'Удалить этот адрес?'))cloudPointDelete(id);});});
+  var nb=document.getElementById('ptNew');if(nb)nb.addEventListener('click',function(){openPointForm('');});
 }
 function saveMe(){
   function gv(id){var el=document.getElementById(id);return el?el.value.trim():'';}
@@ -905,6 +922,8 @@ var CARE_COLORS={
   green:{bg:'#EAF6EE',bd:'#a6d8bb',fg:'#1d6840'},
   grey:{bg:'#F0F0EA',bd:'#dcdad0',fg:'#45443e'}
 };
+function driveThumb(id){return 'https://drive.google.com/thumbnail?id='+id+'&sz=w1000';}
+function driveDl(id){return 'https://drive.google.com/uc?export=download&id='+id;}
 function careBlocksHtml(blocks,lang){
   if(!blocks||!blocks.length)return '';
   function tx(b){return (b.t&&b.t[lang])||'';}
@@ -913,6 +932,12 @@ function careBlocksHtml(blocks,lang){
     if(b.type==='h')return '<h3 class="cg-h">'+esc(tx(b))+'</h3>';
     if(b.type==='note'){var c=CARE_COLORS[b.color||'yellow']||CARE_COLORS.yellow;return '<div class="cg-note" style="background:'+c.bg+';border-color:'+c.bd+';color:'+c.fg+';">'+nl(esc(tx(b)))+'</div>';}
     if(b.type==='table'){var t=(b.t&&b.t[lang])||[];if(!t.length)return '';var s='<div class="cg-tablewrap"><table class="cg-table">';t.forEach(function(row,ri){s+='<tr>';row.forEach(function(cl){var tag=ri===0?'th':'td';s+='<'+tag+'>'+nl(esc(cl||''))+'</'+tag+'>';});s+='</tr>';});return s+'</table></div>';}
+    if(b.type==='img'){var src=b.fileId?driveThumb(b.fileId):(b.thumb||'');var dl=b.fileId?driveDl(b.fileId):(b.download||'');var cap=(b.cap&&b.cap[lang])||'';
+      return '<figure class="cg-fig">'+(src?'<img class="cg-img" src="'+esc(src)+'" alt="" loading="lazy">':'')+
+        (cap?'<figcaption class="cg-cap">'+nl(esc(cap))+'</figcaption>':'')+
+        (dl?'<a class="cg-dl" href="'+esc(dl)+'" rel="noopener">⬇ '+(lang==='sr'?'Preuzmi sliku':'Скачать фото')+'</a>':'')+'</figure>';}
+    if(b.type==='file'){var fdl=b.fileId?driveDl(b.fileId):(b.download||'');var ttl=(b.ttl&&b.ttl[lang])||b.name||(lang==='sr'?'Dokument':'Документ');
+      return '<div class="cg-file"><span class="cg-fic">📄</span><span class="cg-fname">'+esc(ttl)+'</span>'+(fdl?'<a class="cg-dl" href="'+esc(fdl)+'" rel="noopener">⬇ '+(lang==='sr'?'Preuzmi':'Скачать')+'</a>':'')+'</div>';}
     return '<p class="cg-p">'+nl(esc(tx(b)))+'</p>';
   }
   var secs=[],cur=null;
