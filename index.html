@@ -6940,9 +6940,9 @@ function declPrint(ctx){
 /* ---------- РУЧНОЙ ГЕНЕРАТОР: собрать ctx ---------- */
 /* ===== ЭТИКЕТКИ ДЛЯ НАКЛЕЕК ===== */
 var LBL_SIZES={
-  a6:{w:105,h:148,max:4,fs:7.6,pad:5,sheetW:210},
-  a5:{w:210,h:148,max:2,fs:9,pad:8,sheetW:210},
-  a4:{w:210,h:287,max:1,fs:12,pad:14,sheetW:210}
+  a6:{w:105,h:148,max:4,fs:9.5,pad:5,sheetW:210},
+  a5:{w:210,h:148,max:2,fs:11.5,pad:8,sheetW:210},
+  a4:{w:210,h:287,max:1,fs:13.5,pad:14,sheetW:210}
 };
 var lblSize='a6';
 function declLabelInner(p,opts){
@@ -6968,12 +6968,14 @@ function declLabelInner(p,opts){
     if(bits.length)meta='<div class="lm">'+bits.join(' · ')+'</div>';
   }
   return '<div class="lh"><img class="llogo" src="'+BV_LOGO_PNG+'" alt=""><div class="lt"><b>'+esc(p.name)+'</b>'+(p.weight?'<span class="lnet">'+esc(p.weight)+'</span>':'')+'</div></div>'+
+    '<div class="lbody">'+
     (sastav?'<div class="ls">'+sastav+'</div>':'')+
     '<div class="la"><b>Alergeni / Аллергены:</b> '+algNames+'</div>'+
     nutr+
     (shelf.length?'<div class="lr"><b>Rok/Срок:</b> '+shelf.join(' · ')+'</div>':'')+
     (store.length?'<div class="lr"><b>Čuvanje/Хранение:</b> '+store.join(' · ')+'</div>':'')+
     meta+
+    '</div>'+
     '<div class="lf">'+esc(s.name)+' · PIB '+esc(s.pib)+'</div>';
 }
 function declLabelCss(sz){
@@ -6983,16 +6985,16 @@ function declLabelCss(sz){
   '@page{size:A4;margin:0;}'+
   'html,body{background:#fff;font-family:"Wix Madefor Text","Helvetica Neue",Arial,sans-serif;color:#1D1D1B;}'+
   '.sheet{display:flex;flex-wrap:wrap;align-content:flex-start;width:'+c.sheetW+'mm;}'+
-  '.lbl-card{width:'+c.w+'mm;height:'+c.h+'mm;padding:'+c.pad+'mm;border:1px dashed #bbb;overflow:hidden;font-size:'+c.fs+'pt;line-height:1.32;display:flex;flex-direction:column;page-break-inside:avoid;}'+
-  '.lh{display:flex;align-items:center;gap:'+(c.pad*0.7)+'mm;border-bottom:1.5px solid #1D1D1B;padding-bottom:'+(c.pad*0.5)+'mm;margin-bottom:'+(c.pad*0.5)+'mm;}'+
+  '.lbl-card{width:'+c.w+'mm;height:'+c.h+'mm;padding:'+c.pad+'mm;border:1px dashed #bbb;overflow:hidden;font-size:'+c.fs+'pt;line-height:1.4;display:flex;flex-direction:column;page-break-inside:avoid;}'+
+  '.lh{display:flex;align-items:center;gap:'+(c.pad*0.7)+'mm;border-bottom:1.5px solid #1D1D1B;padding-bottom:'+(c.pad*0.5)+'mm;flex-shrink:0;}'+
+  '.lbody{flex:1;display:flex;flex-direction:column;justify-content:space-around;padding:'+(c.pad*0.5)+'mm 0;}'+
   '.llogo{width:'+(c.fs*2.6)+'pt;height:'+(c.fs*2.6)+'pt;object-fit:contain;flex-shrink:0;}'+
-  '.lt{flex:1;} .lt b{font-size:'+(c.fs*1.5)+'pt;font-weight:800;display:block;line-height:1.1;} .lnet{font-weight:700;font-size:'+(c.fs*1.05)+'pt;color:#47A2DA;}'+
-  '.ls{margin-bottom:'+(c.pad*0.4)+'mm;} .ls .ru{display:block;color:#555;}'+
-  '.la{margin-bottom:'+(c.pad*0.4)+'mm;} .la b{color:#c0392b;}'+
-  '.ln{margin-bottom:'+(c.pad*0.4)+'mm;color:#333;}'+
-  '.lr{margin-bottom:'+(c.pad*0.25)+'mm;}'+
-  '.lm{margin:'+(c.pad*0.4)+'mm 0;font-weight:700;}'+
-  '.lf{margin-top:auto;font-size:'+(c.fs*0.8)+'pt;color:#666;border-top:1px solid #ddd;padding-top:'+(c.pad*0.4)+'mm;}'+
+  '.lt{flex:1;} .lt b{font-size:'+(c.fs*1.55)+'pt;font-weight:800;display:block;line-height:1.1;} .lnet{font-weight:700;font-size:'+(c.fs*1.1)+'pt;color:#47A2DA;}'+
+  '.ls .ru{display:block;color:#555;}'+
+  '.la b{color:#c0392b;}'+
+  '.ln{color:#333;}'+
+  '.lm{font-weight:700;}'+
+  '.lf{flex-shrink:0;font-size:'+(c.fs*0.82)+'pt;color:#666;border-top:1px solid #ddd;padding-top:'+(c.pad*0.35)+'mm;}'+
   '</style>';
 }
 function declPrintLabels(){
