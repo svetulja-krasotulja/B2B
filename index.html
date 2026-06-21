@@ -6910,19 +6910,21 @@ function openOrderDecl(orderId){
 /* ---------- инициализация таба ---------- */
 function declCloudReload(cb){
   var st=document.getElementById('declCloudStat');
-  if(!GAS_URL||cloudState!=='on'){if(st){st.textContent='⚠️ Облако не подключено — показаны локальные данные';st.style.color='#c0392b';}if(cb)cb(false);return;}
+  if(!GAS_URL){if(st){st.textContent='⚠️ Облако не настроено — нажмите «Облако…» вверху и вставьте адрес веб-приложения + мастер-ключ';st.style.color='#c0392b';}if(cb)cb(false);return;}
   if(st){st.textContent='Облако: загружаю…';st.style.color='';}
   fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
     body:JSON.stringify({master:MASTER,pull:true})}).then(function(r){return r.json();}).then(function(j){
+    if(j&&j.ok)cloudState='on';
     var dp=(j&&j.ok&&j.data&&j.data.declProducts&&typeof j.data.declProducts==='object')?j.data.declProducts:null;
     if(dp)declProducts=dp;
     var n=dp?Object.keys(dp).filter(function(k){var d=dp[k];return d&&(d.sastavRu||d.sastavSr||(d.alg&&d.alg.length)||(d.nutr&&Object.keys(d.nutr).length));}).length:0;
     if(st){
-      if(dp){st.textContent='✓ В облаке заполнено продуктов: '+n;st.style.color='#1e7e34';}
-      else{st.textContent='✗ В облаке ключа declProducts НЕТ — сервер не записал (нужно обновить Code.gs + Новая версия развёртывания)';st.style.color='#c0392b';}
+      if(!(j&&j.ok)){st.textContent='✗ Сервер ответил с ошибкой: '+((j&&j.error)||'нет ok')+' (проверьте мастер-ключ / развёртывание)';st.style.color='#c0392b';}
+      else if(dp){st.textContent='✓ Облако на связи. В облаке заполнено продуктов: '+n;st.style.color='#1e7e34';}
+      else{st.textContent='✗ Облако на связи, но ключа declProducts ещё НЕТ — сохраните справочник (если после сохранения не появляется: Code.gs не переразвёрнут)';st.style.color='#c0392b';}
     }
     if(cb)cb(true,n,!!dp);
-  }).catch(function(){if(st){st.textContent='⚠️ Ошибка соединения с облаком';st.style.color='#c0392b';}if(cb)cb(false);});
+  }).catch(function(){if(st){st.textContent='⚠️ Не удалось связаться с облаком (сеть/адрес). Проверьте «Облако…»';st.style.color='#c0392b';}if(cb)cb(false);});
 }
 function initDeclTab(){
   renderDeclPick();
@@ -6934,7 +6936,7 @@ function initDeclTab(){
   var upd=document.getElementById('declUpdated');
   var sv=document.getElementById('declSave');
   if(sv&&!sv._b){sv._b=1;sv.addEventListener('click',function(){
-    if(!GAS_URL||cloudState!=='on'){toast('Облако не подключено — справочник НЕ сохранён. Подключите облако (кнопка «Облако…») и сохраните снова.');return;}
+    if(!GAS_URL){toast('Облако не настроено — нажмите «Облако…» вверху и вставьте адрес веб-приложения + мастер-ключ.');return;}
     sv.disabled=true;sv.textContent='Сохраняю…';
     var expectKeys=Object.keys(declProducts);
     fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
