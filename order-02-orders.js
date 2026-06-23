@@ -220,24 +220,23 @@ function renderMyStats(){
   if(!s.count){h+='<div class="empty">'+T('Здесь появится ваша статистика после первых заказов.','Ovde će se prikazati statistika nakon prvih porudžbina.')+'</div>';c.innerHTML=h;bindNav();return;}
   var cur=(LANG==='sr'?'din.':'дин.');
 
-  // 1) Платёжная репутация
-  var payAccent='#3a8a3a',payBody='';
-  if(s.overdue>0){
-    payAccent='#d9534f';
-    payBody='<div style="color:#c0392b;font-weight:600;margin-bottom:6px;">'+T('У вас есть просроченный счёт','Imate dospeli neplaćeni račun')+' ('+s.overdue+').</div>'+
-      '<div>'+T('Оплатите как можно скорее — своевременная оплата открывает лучшие условия и приоритет в производстве.','Platite što pre — blagovremeno plaćanje donosi bolje uslove i prioritet u proizvodnji.')+'</div>';
-  } else if(s.unpaid>0){
-    payAccent='#e0a800';
-    payBody='<div style="margin-bottom:6px;">'+T('Неоплаченных счетов: ','Neplaćenih računa: ')+'<b>'+s.unpaid+'</b>'+(s.debtSum?(' · '+fmt(s.debtSum)+' '+cur):'')+'.</div>'+
-      '<div>'+T('Оплатите в срок — и сохраните репутацию надёжного партнёра.','Platite na vreme — i sačuvaćete reputaciju pouzdanog partnera.')+'</div>';
+  // 1) Оплаты — спокойно, без ярлыков и оценок
+  var payAccent='#47A2DA',payBody='';
+  if(s.unpaid>0){
+    payAccent='#c79a4b';
+    var dueNow=s.overdue>0;
+    payBody='<div style="margin-bottom:6px;">'+T('Открытых счетов','Otvorenih računa')+': <b>'+s.unpaid+'</b>'+(s.debtSum?(' · '+fmt(s.debtSum)+' '+cur):'')+'.</div>'+
+      (dueNow
+        ? '<div>'+T('По части из них срок оплаты уже подошёл. Когда будет удобно — оплатите, спасибо.','Za deo njih je rok plaćanja već stigao. Kada vam bude zgodno — platite, hvala.')+'</div>'
+        : '<div>'+T('Срок оплаты ещё не наступил — всё в порядке.','Rok plaćanja još nije stigao — sve je u redu.')+'</div>');
   } else if(s.paidCount>0){
-    payBody='<div style="font-size:22px;margin-bottom:4px;">⭐ '+T('Надёжный плательщик','Pouzdan platilac')+'</div>'+
-      '<div>'+T('Все счета оплачены','Svi računi su plaćeni')+(s.avgPay!=null?(', '+T('в среднем за ','u proseku za ')+s.avgPay+T(' дн.',' dana')):'')+'. '+T('Так держать — спасибо за дисциплину!','Samo tako nastavite — hvala na disciplini!')+'</div>';
+    payBody='<div style="margin-bottom:4px;">'+T('Все счета оплачены','Svi računi su plaćeni')+'.'+(s.avgPay!=null?(' '+T('Обычно вы оплачиваете за ','Obično plaćate za ')+s.avgPay+T(' дн.',' dana')+'.'):'')+'</div>'+
+      '<div class="hint">'+T('Спасибо за своевременные оплаты.','Hvala na blagovremenim uplatama.')+'</div>';
   } else {
-    payBody='<div>'+T('Оплачивайте счета в срок — это формирует вашу платёжную репутацию.','Plaćajte račune na vreme — to gradi vašu platnu reputaciju.')+'</div>';
+    payBody='<div>'+T('Здесь будет видна история ваших оплат.','Ovde će se prikazati istorija vaših uplata.')+'</div>';
   }
-  if(s.onTime+s.late>0)payBody+='<div class="hint" style="margin-top:6px;">'+T('Вовремя оплачено: ','Na vreme plaćeno: ')+s.onTime+T(' из ',' od ')+(s.onTime+s.late)+'.</div>';
-  h+=msCard('💳 '+T('Платёжная репутация','Platna reputacija'),payBody,payAccent);
+  if(s.onTime+s.late>0)payBody+='<div class="hint" style="margin-top:6px;">'+T('В срок оплачено: ','Na vreme plaćeno: ')+s.onTime+T(' из ',' od ')+(s.onTime+s.late)+'.</div>';
+  h+=msCard('💳 '+T('Оплаты','Plaćanja'),payBody,payAccent);
 
   // 2) Средний заказ и бесплатная доставка
   var frac=s.avgCheck/FREE_FROM;
@@ -262,10 +261,10 @@ function renderMyStats(){
     '</div>';
   var slow=s.freqDays!=null?(s.daysSinceLast>s.freqDays*1.3+1):(s.daysSinceLast>12);
   if(slow){
-    rBody+='<div style="color:#b8860b;">'+T('Вы давно не заказывали — пополните запасы, чтобы у гостей всегда была свежая выпечка. ','Odavno niste poručivali — dopunite zalihe, da gosti uvek imaju svež pekarski program. ')+'</div>'+
+    rBody+='<div>'+T('Возможно, пора пополнить запасы — чтобы у гостей всегда была свежая выпечка.','Možda je vreme da dopunite zalihe — da gosti uvek imaju svež pekarski program.')+'</div>'+
       '<button class="btn-primary" id="msOrderNow" style="margin-top:8px;">'+T('Сделать заказ','Napravi porudžbinu')+'</button>';
   } else {
-    rBody+='<div style="color:#2c7a2c;">'+T('Отличный ритм! Регулярные заказы — это всегда свежий ассортимент для ваших гостей.','Odličan ritam! Redovne porudžbine znače uvek svež asortiman za vaše goste.')+'</div>';
+    rBody+='<div class="hint">'+T('Регулярные заказы — это всегда свежий ассортимент для ваших гостей.','Redovne porudžbine znače uvek svež asortiman za vaše goste.')+'</div>';
   }
   h+=msCard('📅 '+T('Ритм заказов','Ritam porudžbina'),rBody,'#c79a4b');
 
