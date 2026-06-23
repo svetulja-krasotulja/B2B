@@ -3884,6 +3884,14 @@
 
   <section class="panel" id="panel-partners">
     <div class="card">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px;">
+        <div class="cat-title" style="margin-top:0;">Сводка по партнёрам</div>
+        <button class="btn btn-line btn-sm" id="partnersOvRefresh" style="margin-left:auto;">Обновить</button>
+      </div>
+      <p class="hint" style="margin-bottom:12px;">Заказы, оплата и активность по каждому партнёру. Красным — кто не заказывал больше 12 дней.</p>
+      <div id="partnersOverview"><div class="empty">Загружается…</div></div>
+    </div>
+    <div class="card">
       <div class="cat-title" style="margin-top:0;">Партнёры и доступ к заказам</div>
       <p class="hint" style="margin-bottom:14px;">Прайс на странице заказа виден только тем, у кого есть код доступа. Заведите партнёра — получите код и передайте ему. Доступ можно отключить в любой момент, не удаляя историю.</p>
       <div id="partnersWrap"></div>
