@@ -6,6 +6,7 @@
  * ============================================================ */
 
 /* ---------- облако: настройка и синхронизация ---------- */
+(function(){var lb=document.getElementById('logoutBtn');if(lb)lb.addEventListener('click',bvLogout);})();
 document.getElementById('syncBtn').addEventListener('click',function(){
   var msg='Облачная синхронизация (Google Таблица).\n\n';
   if(GAS_URL)msg+='Сейчас подключено к:\n'+GAS_URL+'\n\nВставьте другой URL, чтобы сменить, или оставьте поле пустым и нажмите ОК — появятся действия.';
@@ -44,6 +45,11 @@ document.getElementById('syncBtn').addEventListener('click',function(){
 });
 
 /* ---------- экран-замок (PIN) ---------- */
+function bvLogout(){
+  if(!confirm('Выйти и заблокировать панель? Для входа снова понадобится PIN.'))return;
+  try{localStorage.removeItem('bv_b2b_pin_trust');}catch(e){}
+  location.reload();
+}
 function bvHash(s){
   try{
     var enc=new TextEncoder().encode('bvpin:'+s);
